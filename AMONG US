@@ -136,80 +136,77 @@ Tabs.Main:AddToggle("AutoCollectSweets", {
 ------------------------ ESP ROLE ------------------------
 
 
+local Drawing = Drawing
 local RunService = game:GetService("RunService")
-local Camera = workspace.CurrentCamera
+local Workspace = game:GetService("Workspace")
+
 local sweetsESP = {}
 local espConnection
 
-local function createESP()
+local function createESPLabel()
 	local text = Drawing.new("Text")
 	text.Size = 14
 	text.Center = true
 	text.Outline = true
-	text.Font = 2
-	text.Color = Color3.fromRGB(255, 182, 193)
+	text.Color = Color3.fromRGB(255, 200, 255)
 	text.Text = "Cold Sweet"
-	text.Visible = false
+	text.Visible = true
 	return text
 end
 
-local function clearESP()
-	for _, v in pairs(sweetsESP) do
-		if v and v.Remove then v:Remove() end
+local function clearAllSweetsESP()
+	for _, esp in pairs(sweetsESP) do
+		if esp and esp.Remove then
+			esp:Remove()
+		end
 	end
 	table.clear(sweetsESP)
 end
 
-Tabs.Esp:AddToggle("ColdSweetsESP", {
+Tabs.Main:AddToggle("ColdSweetsESP", {
 	Title = "Cold Sweets ESP",
-	Description = "Show ESP for ice cream collectible",
+	Description = "Draws ESP for Cold Sweets if they exist.",
 	Default = false,
-	Callback = function(enabled)
+	Callback = function(state)
 		if espConnection then
 			espConnection:Disconnect()
 			espConnection = nil
 		end
 
-		clearESP()
-		if not enabled then return end
+		clearAllSweetsESP()
+
+		if not state then return end
 
 		espConnection = RunService.RenderStepped:Connect(function()
-			local sweetsFolder = workspace:FindFirstChild("GameEvents")
-			if not sweetsFolder then
-				clearESP()
+			local gameEvents = Workspace:FindFirstChild("GameEvents")
+			if not gameEvents then
+				clearAllSweetsESP()
 				return
 			end
 
-			-- Clean up stale entries
-			for obj, drawing in pairs(sweetsESP) do
-				if not obj or not obj:IsDescendantOf(workspace) then
-					drawing:Remove()
+			-- Cleanup and re-add ESPs
+			for _, obj in pairs(gameEvents:GetChildren()) do
+				if obj:IsA("BasePart") and obj:FindFirstChild("IcecreamScript") then
+					if not sweetsESP[obj] then
+						sweetsESP[obj] = createESPLabel()
+					end
+				end
+			end
+
+			-- Draw ESP labels
+			local camera = workspace.CurrentCamera
+			for obj, esp in pairs(sweetsESP) do
+				if not obj or not obj:IsDescendantOf(gameEvents) then
+					if esp and esp.Remove then esp:Remove() end
 					sweetsESP[obj] = nil
-				end
-			end
-
-			-- Track new sweets
-			for _, item in ipairs(sweetsFolder:GetChildren()) do
-				if (item:IsA("BasePart") or item:IsA("Model")) and (item:FindFirstChild("Highlight") or item:FindFirstChild("IcecreamScript")) then
-					if not sweetsESP[item] then
-						sweetsESP[item] = createESP()
-					end
-				end
-			end
-
-			-- Update ESP positions
-			for obj, text in pairs(sweetsESP) do
-				if obj and obj:IsDescendantOf(workspace) then
-					local part = obj:IsA("Model") and obj:FindFirstChildWhichIsA("BasePart") or obj
-					if part then
-						local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
-						text.Position = Vector2.new(screenPos.X, screenPos.Y - 15)
-						text.Visible = onScreen
-					else
-						text.Visible = false
-					end
 				else
-					text.Visible = false
+					local pos, onScreen = camera:WorldToViewportPoint(obj.Position)
+					if onScreen then
+						esp.Position = Vector2.new(pos.X, pos.Y)
+						esp.Visible = true
+					else
+						esp.Visible = false
+					end
 				end
 			end
 		end)
