@@ -1,0 +1,738 @@
+
+--[[
+ 
+              V G X M O D   X   D A R K   D E C E P T I O N   H U N T E D
+
+]]
+
+
+
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+
+local Window = Fluent:CreateWindow({
+    Title = "Vgxmod X Dark Deception Hunted",
+    SubTitle = "by Pkgx1",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(470, 260),
+    Acrylic = false,
+    Theme = "Darker",
+    MinimizeKey = Enum.KeyCode.LeftAlt
+})
+
+local Tabs = {
+    Info = Window:AddTab({ Title = "Info", Icon = "info" }),
+    Main = Window:AddTab({ Title = "Main", Icon = "layout-dashboard" }),
+    Esp = Window:AddTab({ Title = "Esp", Icon = "eye" }),
+    Combat = Window:AddTab({ Title = "Combat", Icon = "swords" }),
+    Player = Window:AddTab({ Title = "Player", Icon = "user" }),
+    Misc = Window:AddTab({ Title = "Misc", Icon = "settings" }),
+}
+
+Tabs.Info:AddParagraph({
+    Title = "Welcome to Vgxmod",
+    Content = "Kindly Request Script"
+})
+
+Tabs.Info:AddButton({
+    Title = "Discord",
+    Description = "",
+    Callback = function()
+        setclipboard("https://discord.gg/n9gtmefsjc")
+        Fluent:Notify({
+            Title = "Vgxmod X Hub",
+            Content = "Discord Link",
+            SubContent = "Link copied to clipboard! Paste it in your browser.",
+            Duration = 5
+        })
+    end
+})
+
+
+
+
+
+------------------------ AUTO FARM ------------------------
+local autoFarmEnabled = false
+local lp = game.Players.LocalPlayer
+local shardFolder = workspace:FindFirstChild("Shards")
+
+-- Smart Stage 2 check
+local function isStage2()
+	local maps = workspace:FindFirstChild("Maps")
+	return maps and maps:FindFirstChild("Stage2")
+end
+
+-- Wait until RingAltar exists (up to 5 seconds)
+local function getEscapePart(timeout)
+	timeout = timeout or 5
+	local t = 0
+	while t < timeout do
+		local success, altar = pcall(function()
+			return workspace.Hotel.Maze.Rooms.Main.RingAltar.Parts.RingAltar
+		end)
+		if success and altar then return altar end
+		task.wait(0.5)
+		t = t + 0.5
+	end
+	return nil
+end
+
+-- Simulate "touch" silently
+local function simulateTouch(part)
+	local char = lp.Character
+	if not char then return end
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+
+	firetouchinterest(root, part, 0)
+	firetouchinterest(root, part, 1)
+end
+
+-- Collect all shards silently
+local function collectShards()
+	if not shardFolder then return end
+	for _, shard in pairs(shardFolder:GetChildren()) do
+		if shard:IsA("BasePart") then
+			pcall(function()
+				simulateTouch(shard)
+			end)
+		end
+	end
+end
+
+-- AutoFarm loop
+task.spawn(function()
+	while true do
+		task.wait(1)
+		if autoFarmEnabled then
+			shardFolder = workspace:FindFirstChild("Shards")
+
+			if shardFolder and #shardFolder:GetChildren() > 0 then
+				collectShards()
+			elseif shardFolder and #shardFolder:GetChildren() == 0 and isStage2() then
+				local escape = getEscapePart(5)
+				local root = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
+				if escape and root then
+					root.CFrame = escape.CFrame + Vector3.new(0, 3, 0)
+					print("[AutoFarm] ✅ Teleported to RingAltar")
+				end
+			end
+		end
+	end
+end)
+
+-- Toggle in Fluent UI
+Tabs.Main:AddToggle("SilentAutoFarm", {
+	Title = "Auto Farm",
+	Default = false,
+	Callback = function(state)
+		autoFarmEnabled = state
+	end
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------ MAIN ------------------------
+local autoCollectEnabled = false
+local collected = {}
+local lp = game.Players.LocalPlayer
+local char = lp.Character or lp.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+-- safely wait for shards folder
+local shardsFolder
+task.spawn(function()
+	while not shardsFolder do
+		shardsFolder = workspace:FindFirstChild("Shards")
+		task.wait(1)
+	end
+end)
+
+-- silently touch shard
+local function fireTouch(part)
+	if not part:IsA("BasePart") or collected[part] then return end
+	collected[part] = true
+	firetouchinterest(hrp, part, 0)
+	task.wait()
+	firetouchinterest(hrp, part, 1)
+end
+
+-- collect existing shards
+local function collectAll()
+	if not shardsFolder then return end
+	for _, shard in ipairs(shardsFolder:GetChildren()) do
+		if autoCollectEnabled then
+			fireTouch(shard)
+		end
+	end
+end
+
+-- toggle function
+local function toggleAutoCollect(state)
+	autoCollectEnabled = state
+	if state then
+		collectAll()
+	end
+end
+
+-- on new shard spawn
+task.spawn(function()
+	while true do
+		if autoCollectEnabled and shardsFolder then
+			for _, shard in pairs(shardsFolder:GetChildren()) do
+				if shard:IsA("BasePart") and not collected[shard] then
+					fireTouch(shard)
+				end
+			end
+		end
+		task.wait(0.5)
+	end
+end)
+
+-- on new shard child
+task.spawn(function()
+	while true do
+		if shardsFolder then
+			shardsFolder.ChildAdded:Connect(function(kid)
+				if autoCollectEnabled then
+					task.wait(0.15)
+					fireTouch(kid)
+				end
+			end)
+			break
+		end
+		task.wait(1)
+	end
+end)
+
+-- reapply after death
+lp.CharacterAdded:Connect(function(newChar)
+	char = newChar
+	hrp = newChar:WaitForChild("HumanoidRootPart")
+	task.wait(1)
+	if autoCollectEnabled then
+		collected = {} -- reset touched shards
+		collectAll()
+	end
+end)
+
+-- ✅ Fluent UI Toggle (Main Tab)
+Tabs.Main:AddToggle("AutoCollectShards", {
+	Title = "Auto Collect Shards",
+	Default = false,
+	Callback = function(v)
+		toggleAutoCollect(v)
+	end
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------ ESP ------------------------
+local ESP_ON = false
+local MONKEY_ESP = {}
+local enemiesFolder = workspace:WaitForChild("Terrain"):WaitForChild("Enemies")
+
+-- find monkey-like models recursively
+local function findMonkeyModels()
+	local monkeys = {}
+
+	-- check direct children of Enemies
+	for _, item in ipairs(enemiesFolder:GetChildren()) do
+		if item:IsA("Model") and item.Name:lower():find("monkey") then
+			table.insert(monkeys, item)
+		elseif item:IsA("Folder") then
+			for _, sub in ipairs(item:GetChildren()) do
+				if sub:IsA("Model") and sub.Name:lower():find("monkey") then
+					table.insert(monkeys, sub)
+				end
+			end
+		end
+	end
+
+	return monkeys
+end
+
+-- tag a monkey with ESP
+local function tagMonkey(monkeyModel)
+	if not monkeyModel:IsA("Model") or MONKEY_ESP[monkeyModel] then return end
+
+	local root = monkeyModel:FindFirstChild("HumanoidRootPart") or monkeyModel:FindFirstChildWhichIsA("BasePart")
+	if not root then return end
+
+	local tag = Instance.new("BillboardGui")
+	tag.Name = "MonkeyTag"
+	tag.Size = UDim2.new(0, 100, 0, 20)
+	tag.AlwaysOnTop = true
+	tag.Adornee = root
+	tag.StudsOffset = Vector3.new(0, 2.5, 0)
+	tag.Parent = root
+
+	local label = Instance.new("TextLabel", tag)
+	label.Size = UDim2.new(1, 0, 1, 0)
+	label.BackgroundTransparency = 1
+	label.TextColor3 = Color3.fromRGB(255, 85, 85) -- red
+	label.Text = "🦍 Monkey"
+	label.Font = Enum.Font.GothamBold
+	label.TextScaled = true
+
+	MONKEY_ESP[monkeyModel] = tag
+end
+
+-- untag
+local function untagMonkey(monkeyModel)
+	if MONKEY_ESP[monkeyModel] then
+		MONKEY_ESP[monkeyModel]:Destroy()
+		MONKEY_ESP[monkeyModel] = nil
+	end
+end
+
+-- full toggle logic
+local function toggleMonkeyESP(state)
+	ESP_ON = state
+
+	local allMonkeys = findMonkeyModels()
+	for _, monkey in ipairs(allMonkeys) do
+		if state then
+			tagMonkey(monkey)
+		else
+			untagMonkey(monkey)
+		end
+	end
+end
+
+-- update when new things spawn
+enemiesFolder.ChildAdded:Connect(function(kid)
+	task.wait(0.1)
+
+	-- check folder or model
+	if ESP_ON then
+		if kid:IsA("Model") and kid.Name:lower():find("monkey") then
+			tagMonkey(kid)
+		elseif kid:IsA("Folder") then
+			for _, sub in ipairs(kid:GetChildren()) do
+				if sub:IsA("Model") and sub.Name:lower():find("monkey") then
+					tagMonkey(sub)
+				end
+			end
+		end
+	end
+end)
+
+-- reapply on player respawn
+game.Players.LocalPlayer.CharacterAdded:Connect(function()
+	task.wait(1)
+	if ESP_ON then
+		local monkeys = findMonkeyModels()
+		for _, m in ipairs(monkeys) do
+			if not MONKEY_ESP[m] then
+				tagMonkey(m)
+			end
+		end
+	end
+end)
+
+-- ✅ Fluent toggle
+Tabs.Esp:AddToggle("MonkeyESP", {
+	Title = "Monkey ESP",
+	Default = false,
+	Callback = function(v)
+		toggleMonkeyESP(v)
+	end
+})
+
+
+
+
+
+
+------------------------ ESP ------------------------
+local ESP_ON = false
+local ESPED = {}
+local shardsFolder = workspace:FindFirstChild("Shards")
+
+-- wait until shards folder is ready
+while not shardsFolder do
+	task.wait(1)
+	shardsFolder = workspace:FindFirstChild("Shards")
+end
+
+-- add floating name above shard
+local function tagShard(part, customText, color)
+	if not part:IsA("BasePart") or ESPED[part] then return end
+
+	local tag = Instance.new("BillboardGui")
+	tag.Name = "ShardTag"
+	tag.Size = UDim2.new(0, 100, 0, 20)
+	tag.AlwaysOnTop = true
+	tag.Adornee = part
+	tag.StudsOffset = Vector3.new(0, 1.5, 0)
+	tag.Parent = part
+
+	local label = Instance.new("TextLabel", tag)
+	label.Size = UDim2.new(1, 0, 1, 0)
+	label.BackgroundTransparency = 1
+	label.TextColor3 = color or Color3.fromRGB(170, 0, 255) -- Default Purple
+	label.Text = customText or "Shard"
+	label.Font = Enum.Font.SourceSansBold
+	label.TextScaled = true
+
+	ESPED[part] = tag
+end
+
+-- remove floating name
+local function untagShard(part)
+	if ESPED[part] then
+		ESPED[part]:Destroy()
+		ESPED[part] = nil
+	end
+end
+
+-- toggle ESP logic
+local function toggleShardLabels(state)
+	ESP_ON = state
+
+	for _, shard in pairs(shardsFolder:GetChildren()) do
+		if shard:IsA("BasePart") then
+			if state then
+				local name = shard.Name
+				if name == "RedShard" then
+					tagShard(shard, "Red Shard", Color3.fromRGB(255, 0, 0))
+				elseif name == "OrangeShard" then
+					tagShard(shard, "Orange Shard", Color3.fromRGB(255, 140, 0))
+				else
+					tagShard(shard, "Shard", Color3.fromRGB(170, 0, 255)) -- purple
+				end
+			else
+				untagShard(shard)
+			end
+		end
+	end
+end
+
+-- react to new shards
+shardsFolder.ChildAdded:Connect(function(kid)
+	if kid:IsA("BasePart") and ESP_ON then
+		task.wait(0.1)
+		local name = kid.Name
+		if name == "RedShard" then
+			tagShard(kid, "Red Shard", Color3.fromRGB(255, 0, 0))
+		elseif name == "OrangeShard" then
+			tagShard(kid, "Orange Shard", Color3.fromRGB(255, 140, 0))
+		else
+			tagShard(kid, "Shard", Color3.fromRGB(170, 0, 255))
+		end
+	end
+end)
+
+-- reapply after respawn
+game.Players.LocalPlayer.CharacterAdded:Connect(function()
+	task.wait(1)
+	if ESP_ON then
+		for _, s in pairs(shardsFolder:GetChildren()) do
+			if s:IsA("BasePart") and not ESPED[s] then
+				local name = s.Name
+				if name == "RedShard" then
+					tagShard(s, "Red Shard", Color3.fromRGB(255, 0, 0))
+				elseif name == "OrangeShard" then
+					tagShard(s, "Orange Shard", Color3.fromRGB(255, 140, 0))
+				else
+					tagShard(s, "Shard", Color3.fromRGB(170, 0, 255))
+				end
+			end
+		end
+	end
+end)
+
+-- safety check every 2s for missed shards
+task.spawn(function()
+	while true do
+		if ESP_ON then
+			local red = shardsFolder:FindFirstChild("RedShard")
+			local orange = shardsFolder:FindFirstChild("OrangeShard")
+
+			if red and red:IsA("BasePart") and not ESPED[red] then
+				tagShard(red, "Red Shard", Color3.fromRGB(255, 0, 0))
+			end
+			if orange and orange:IsA("BasePart") and not ESPED[orange] then
+				tagShard(orange, "Orange Shard", Color3.fromRGB(255, 140, 0))
+			end
+		end
+		task.wait(2)
+	end
+end)
+
+-- Fluent toggle for Shard ESP
+Tabs.Esp:AddToggle("nameESP", {
+	Title = "Shard ESP",
+	Default = false,
+	Callback = function(v)
+		toggleShardLabels(v)
+	end
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------ Combat ------------------------
+local autoTPEnabled = false
+local safeSpots = {
+	Vector3.new(0, 50, 0),
+	Vector3.new(100, 50, 100),
+	Vector3.new(-100, 50, -100)
+}
+local lastSpot = 0
+
+-- get next safe location
+local function getSafeSpot()
+	lastSpot = (lastSpot % #safeSpots) + 1
+	return safeSpots[lastSpot]
+end
+
+-- find enemy root position
+local function getEnemyRoots()
+	local roots = {}
+	local enemiesFolder = workspace:FindFirstChild("Terrain") and workspace.Terrain:FindFirstChild("Enemies")
+	if not enemiesFolder then return roots end
+
+	for _, enemy in pairs(enemiesFolder:GetDescendants()) do
+		if enemy:IsA("Model") and enemy.Name:lower():find("monkey") then
+			local root = enemy:FindFirstChild("HumanoidRootPart") or enemy:FindFirstChildWhichIsA("BasePart")
+			if root then
+				table.insert(roots, root)
+			end
+		end
+	end
+	return roots
+end
+
+-- TP logic
+task.spawn(function()
+	while true do
+		task.wait(0.25)
+		if autoTPEnabled then
+			local char = game.Players.LocalPlayer.Character
+			local root = char and char:FindFirstChild("HumanoidRootPart")
+			if root then
+				for _, enemy in ipairs(getEnemyRoots()) do
+					if (enemy.Position - root.Position).Magnitude < 12 then
+						root.CFrame = CFrame.new(getSafeSpot())
+						break
+					end
+				end
+			end
+		end
+	end
+end)
+
+-- ✅ Add Toggle to Fluent UI (Player Tab)
+Tabs.Combat:AddToggle("AutoTPMonkey", {
+	Title = "Auto Safe",
+	Description = "Avoid Monkey",
+	Default = false,
+	Callback = function(v)
+		autoTPEnabled = v
+	end
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------ PLAYER ------------------------
+local godMode = false
+local enemiesFolder = workspace:FindFirstChild("Terrain") and workspace.Terrain:FindFirstChild("Enemies")
+
+-- smart function to strip monkey hitboxes
+local function removeMonkeyTouch(monkey)
+	if not monkey:IsA("Model") then return end
+
+	for _, part in pairs(monkey:GetDescendants()) do
+		if part:IsA("BasePart") then
+			for _, sub in pairs(part:GetChildren()) do
+				if sub:IsA("TouchTransmitter") or sub.Name:lower():find("touchinterest") then
+					sub:Destroy()
+				end
+			end
+		end
+	end
+end
+
+-- run on all loaded monkeys
+local function removeAllMonkeysTouch()
+	if not enemiesFolder then return end
+
+	for _, obj in ipairs(enemiesFolder:GetDescendants()) do
+		if obj:IsA("Model") and obj.Name:lower():find("monkey") then
+			removeMonkeyTouch(obj)
+		end
+	end
+end
+
+-- toggle logic
+local function toggleGodMode(state)
+	godMode = state
+	if godMode then
+		removeAllMonkeysTouch()
+	end
+end
+
+-- monitor for new monkey spawns
+task.spawn(function()
+	while true do
+		if godMode and enemiesFolder then
+			for _, obj in ipairs(enemiesFolder:GetChildren()) do
+				if obj:IsA("Model") and obj.Name:lower():find("monkey") then
+					removeMonkeyTouch(obj)
+				elseif obj:IsA("Folder") then
+					for _, sub in ipairs(obj:GetChildren()) do
+						if sub:IsA("Model") and sub.Name:lower():find("monkey") then
+							removeMonkeyTouch(sub)
+						end
+					end
+				end
+			end
+		end
+		task.wait(1.5)
+	end
+end)
+
+-- ✅ Add to Fluent Tab: Player
+Tabs.Player:AddToggle("GodModeAntiTouch", {
+	Title = "God Mode",
+	Description = "it depends on the server",
+	Default = false,
+	Callback = function(v)
+		toggleGodMode(v)
+	end
+})
+
+
+
+local lighting = game:GetService("Lighting")
+local fullBrightEnabled = false
+
+-- store original lighting settings
+local originalSettings = {
+	Brightness = lighting.Brightness,
+	ClockTime = lighting.ClockTime,
+	FogEnd = lighting.FogEnd,
+	GlobalShadows = lighting.GlobalShadows,
+	Ambient = lighting.Ambient,
+	OutdoorAmbient = lighting.OutdoorAmbient
+}
+
+-- turn on fullbright
+local function enableFullBright()
+	lighting.Brightness = 10
+	lighting.ClockTime = 14
+	lighting.FogEnd = 100000
+	lighting.GlobalShadows = false
+	lighting.Ambient = Color3.fromRGB(255, 255, 255)
+	lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+end
+
+-- reset to normal
+local function disableFullBright()
+	for setting, value in pairs(originalSettings) do
+		lighting[setting] = value
+	end
+end
+
+-- create Fluent toggle under Player tab
+Tabs.Player:AddToggle("FullBrightToggle", {
+	Title = "Full Brightness",
+	Default = false,
+	Callback = function(state)
+		fullBrightEnabled = state
+		if state then
+			enableFullBright()
+		else
+			disableFullBright()
+		end
+	end
+})
+
+
+
+
+
+
+
+------------------------ Misc ------------------------
+Tabs.Misc:AddButton({
+	Title = "TP to Ring Altar",
+	Description = "Teleport to the altar (Stage 2 escape zone)",
+	Callback = function()
+		local lp = game.Players.LocalPlayer
+		local char = lp.Character or lp.CharacterAdded:Wait()
+		local root = char:FindFirstChild("HumanoidRootPart")
+
+		local altarPart
+		pcall(function()
+			altarPart = workspace.Hotel.Maze.Rooms.Main.RingAltar.Parts.RingAltar
+		end)
+
+		if root and altarPart then
+			root.CFrame = altarPart.CFrame + Vector3.new(0, 3, 0)
+		else
+			Fluent:Notify({
+				Title = "Teleport Failed",
+				Content = "Ring Altar part not found. Are you in Stage 2?",
+				Duration = 4
+			})
+		end
+	end
+})
+
+------------------------ End ------------------------
+
+Window:SelectInfo(1)
