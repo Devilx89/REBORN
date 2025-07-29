@@ -96,46 +96,35 @@ Tabs.Info:AddButton({
 
 
 ------------------------ MAIN ------------------------
-local autoCandyConnection
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
-Tabs.Main:AddToggle("AutoCollectCandy", {
-    Title = "Auto Collect Candy",
-    Description = "Silently collects all icecream/candy pieces in the map.",
+local autoCollectConnection
+
+Tabs.Main:AddToggle("AutoCollectSweets", {
+    Title = "Auto Collect Cold Sweets",
+    Description = "Silently picks up Cold Sweets when they're present.",
     Default = false,
     Callback = function(state)
-        if state then
-            autoCandyConnection = RunService.RenderStepped:Connect(function()
-                local player = Players.LocalPlayer
-                local char = player.Character
-                local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                local gameEvents = workspace:FindFirstChild("GameEvents")
-
-                if not hrp or not gameEvents then return end
-
-                for _, obj in pairs(gameEvents:GetChildren()) do
-                    if obj:IsA("BasePart") and obj:FindFirstChildWhichIsA("TouchTransmitter") then
-                        pcall(function()
-                            firetouchinterest(hrp, obj, 0)
-                            firetouchinterest(hrp, obj, 1)
-                        end)
-                    elseif obj:IsA("Model") then
-                        for _, part in pairs(obj:GetDescendants()) do
-                            if part:IsA("BasePart") and part:FindFirstChildWhichIsA("TouchTransmitter") then
-                                pcall(function()
-                                    firetouchinterest(hrp, part, 0)
-                                    firetouchinterest(hrp, part, 1)
-                                end)
-                            end
-                        end
-                    end
-                end
-            end)
-        else
-            if autoCandyConnection then
-                autoCandyConnection:Disconnect()
-                autoCandyConnection = nil
-            end
+        if autoCollectConnection then
+            autoCollectConnection:Disconnect()
+            autoCollectConnection = nil
         end
+
+        if not state then return end
+
+        autoCollectConnection = RunService.Heartbeat:Connect(function()
+            local gameEvents = workspace:FindFirstChild("GameEvents")
+            if not gameEvents then return end
+
+            for _, obj in ipairs(gameEvents:GetChildren()) do
+                if obj:IsA("BasePart") and obj:FindFirstChild("TouchInterest") and obj:FindFirstChild("IcecreamScript") then
+                    firetouchinterest(LocalPlayer.Character.HumanoidRootPart, obj, 0)
+                    firetouchinterest(LocalPlayer.Character.HumanoidRootPart, obj, 1)
+                end
+            end
+        end)
     end
 })
 
@@ -144,8 +133,92 @@ Tabs.Main:AddToggle("AutoCollectCandy", {
 
 
 
-
 ------------------------ ESP ROLE ------------------------
+
+
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+local sweetsESP = {}
+local espConnection
+
+local function createESP()
+	local text = Drawing.new("Text")
+	text.Size = 14
+	text.Center = true
+	text.Outline = true
+	text.Font = 2
+	text.Color = Color3.fromRGB(255, 182, 193)
+	text.Text = "Cold Sweet"
+	text.Visible = false
+	return text
+end
+
+local function clearESP()
+	for _, v in pairs(sweetsESP) do
+		if v and v.Remove then v:Remove() end
+	end
+	table.clear(sweetsESP)
+end
+
+Tabs.Esp:AddToggle("ColdSweetsESP", {
+	Title = "Cold Sweets ESP",
+	Description = "Show ESP for ice cream collectible",
+	Default = false,
+	Callback = function(enabled)
+		if espConnection then
+			espConnection:Disconnect()
+			espConnection = nil
+		end
+
+		clearESP()
+		if not enabled then return end
+
+		espConnection = RunService.RenderStepped:Connect(function()
+			local sweetsFolder = workspace:FindFirstChild("GameEvents")
+			if not sweetsFolder then
+				clearESP()
+				return
+			end
+
+			-- Clean up stale entries
+			for obj, drawing in pairs(sweetsESP) do
+				if not obj or not obj:IsDescendantOf(workspace) then
+					drawing:Remove()
+					sweetsESP[obj] = nil
+				end
+			end
+
+			-- Track new sweets
+			for _, item in ipairs(sweetsFolder:GetChildren()) do
+				if (item:IsA("BasePart") or item:IsA("Model")) and (item:FindFirstChild("Highlight") or item:FindFirstChild("IcecreamScript")) then
+					if not sweetsESP[item] then
+						sweetsESP[item] = createESP()
+					end
+				end
+			end
+
+			-- Update ESP positions
+			for obj, text in pairs(sweetsESP) do
+				if obj and obj:IsDescendantOf(workspace) then
+					local part = obj:IsA("Model") and obj:FindFirstChildWhichIsA("BasePart") or obj
+					if part then
+						local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+						text.Position = Vector2.new(screenPos.X, screenPos.Y - 15)
+						text.Visible = onScreen
+					else
+						text.Visible = false
+					end
+				else
+					text.Visible = false
+				end
+			end
+		end)
+	end
+})
+
+
+
+
 -- Declare locals at the top
 local esp = {}
 local connection = nil
