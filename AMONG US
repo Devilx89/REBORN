@@ -1,0 +1,634 @@
+--[[
+ 
+              V G X M O D   X   A M O N G  U S
+
+]]
+
+
+
+
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+
+local Window = Fluent:CreateWindow({
+    Title = "Vgxmod X Among us",
+    SubTitle = "by Pkgx1",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(470, 260),
+    Acrylic = false,
+    Theme = "Darker",
+    MinimizeKey = Enum.KeyCode.LeftAlt
+})
+
+local Tabs = {
+    Info = Window:AddTab({ Title = "Info", Icon = "info" }),
+    Main = Window:AddTab({ Title = "Main", Icon = "layout-dashboard" }),
+    ESP = Window:AddTab({ Title = "ESP", Icon = "eye" }),
+    Combat = Window:AddTab({ Title = "Combat", Icon = "swords" }),
+    Player = Window:AddTab({ Title = "Player", Icon = "user" }),
+    Misc = Window:AddTab({ Title = "Misc", Icon = "settings" }),
+}
+
+
+
+------------------------ WRAP ------------------------
+
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui")
+local Lighting = game:GetService("Lighting")
+
+-- Globals
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera or workspace:WaitForChild("Camera")
+local DEFAULT_FOV = Camera and Camera.FieldOfView or 70
+
+-- Game-Specific
+local KillRemote = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("Kill")
+local RolesFolder = ReplicatedStorage:WaitForChild("Roles")
+
+-- State Holders (for toggles)
+local esp = {}
+local espBodies = {}
+local noFogLightLoop = nil
+local noclipConnection = nil
+local removeConnection = nil
+local connection = nil
+
+------------------------ END ------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+Tabs.Info:AddParagraph({
+    Title = "Welcome to Vgxmod",
+    Content = "Kindly Request Script"
+})
+
+Tabs.Info:AddButton({
+    Title = "Discord",
+    Description = "",
+    Callback = function()
+        setclipboard("https://discord.gg/n9gtmefsjc")
+        Fluent:Notify({
+            Title = "Vgxmod X Hub",
+            Content = "Discord Link",
+            SubContent = "Link copied to clipboard! Paste it in your browser.",
+            Duration = 5
+        })
+    end
+})
+
+
+
+
+
+
+
+------------------------ MAIN ------------------------
+local autoCandyConnection
+
+Tabs.Main:AddToggle("AutoCollectCandy", {
+    Title = "Auto Collect Candy",
+    Description = "Silently collects all icecream/candy pieces in the map.",
+    Default = false,
+    Callback = function(state)
+        if state then
+            autoCandyConnection = RunService.RenderStepped:Connect(function()
+                local player = Players.LocalPlayer
+                local char = player.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                local gameEvents = workspace:FindFirstChild("GameEvents")
+
+                if not hrp or not gameEvents then return end
+
+                for _, obj in pairs(gameEvents:GetChildren()) do
+                    if obj:IsA("BasePart") and obj:FindFirstChildWhichIsA("TouchTransmitter") then
+                        pcall(function()
+                            firetouchinterest(hrp, obj, 0)
+                            firetouchinterest(hrp, obj, 1)
+                        end)
+                    elseif obj:IsA("Model") then
+                        for _, part in pairs(obj:GetDescendants()) do
+                            if part:IsA("BasePart") and part:FindFirstChildWhichIsA("TouchTransmitter") then
+                                pcall(function()
+                                    firetouchinterest(hrp, part, 0)
+                                    firetouchinterest(hrp, part, 1)
+                                end)
+                            end
+                        end
+                    end
+                end
+            end)
+        else
+            if autoCandyConnection then
+                autoCandyConnection:Disconnect()
+                autoCandyConnection = nil
+            end
+        end
+    end
+})
+
+
+
+
+
+
+
+------------------------ ESP ROLE ------------------------
+-- Declare locals at the top
+local esp = {}
+local connection = nil
+local removeConnection = nil
+
+local function createESP()
+    return {
+        text = Drawing.new("Text"),
+        box = Drawing.new("Square"),
+        tracer = Drawing.new("Line")
+    }
+end
+
+local function removeESP(plr)
+    if esp[plr] then
+        for _, drawing in pairs(esp[plr]) do
+            if drawing and drawing.Remove then
+                drawing:Remove()
+            end
+        end
+        esp[plr] = nil
+    end
+end
+
+local Toggle5 = Tabs.ESP:AddToggle("MyToggle5", {
+    Title = "ESP All Roles",
+    Default = false
+})
+
+Toggle5:OnChanged(function(state)
+    if state then
+        removeConnection = Players.PlayerRemoving:Connect(function(plr)
+            removeESP(plr)
+        end)
+
+        connection = RunService.RenderStepped:Connect(function()
+            for _, plr in pairs(Players:GetPlayers()) do
+                if plr ~= LocalPlayer then
+                    local char = plr.Character
+                    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                    if not hrp then
+                        removeESP(plr)
+                        continue
+                    end
+
+                    local states = plr:FindFirstChild("PublicStates")
+                    local roleVal = states and states:FindFirstChild("Role")
+                    local subroleVal = states and states:FindFirstChild("SubRole")
+                    local aliveVal = states and states:FindFirstChild("Alive")
+
+                    local role = roleVal and roleVal.Value or "Unknown"
+                    local subrole = subroleVal and subroleVal.Value or ""
+                    local alive = aliveVal and aliveVal.Value
+
+                    if not esp[plr] then
+                        esp[plr] = createESP()
+
+                        local espText = esp[plr].text
+                        espText.Size = 13
+                        espText.Center = true
+                        espText.Outline = true
+                        espText.Font = 2
+
+                        local espBox = esp[plr].box
+                        espBox.Thickness = 1.5
+                        espBox.Filled = false
+
+                        local espTracer = esp[plr].tracer
+                        espTracer.Thickness = 1.5
+                    end
+
+                    local screenPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+                    local dist = (Camera.CFrame.Position - hrp.Position).Magnitude
+
+                    local color = (role == "Imposter") and Color3.new(1, 0, 0) or Color3.fromRGB(50, 255, 50)
+
+                    if onScreen and alive ~= false then
+                        local height = 3
+                        local top = Camera:WorldToViewportPoint(hrp.Position + Vector3.new(0, height / 2, 0))
+                        local bottom = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, height / 2, 0))
+                        local boxHeight = math.abs(top.Y - bottom.Y)
+                        local boxWidth = boxHeight / 1.5
+                        local boxPos = Vector2.new(screenPos.X - boxWidth / 2, screenPos.Y - boxHeight / 2)
+
+                        local box = esp[plr].box
+                        box.Size = Vector2.new(boxWidth, boxHeight)
+                        box.Position = boxPos
+                        box.Color = color
+                        box.Visible = true
+
+                        local text = esp[plr].text
+                        if subrole ~= "" then
+                            text.Text = string.format("%s [%s | %s] - %.0fm", plr.Name, role, subrole, dist)
+                        else
+                            text.Text = string.format("%s [%s] - %.0fm", plr.Name, role, dist)
+                        end
+                        text.Position = Vector2.new(screenPos.X, boxPos.Y - 16)
+                        text.Color = color
+                        text.Visible = true
+
+                        local tracer = esp[plr].tracer
+                        tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                        tracer.To = Vector2.new(screenPos.X, screenPos.Y)
+                        tracer.Color = color
+                        tracer.Visible = true
+                    else
+                        esp[plr].text.Visible = false
+                        esp[plr].box.Visible = false
+                        esp[plr].tracer.Visible = false
+                    end
+                end
+            end
+        end)
+    else
+        if connection then
+            connection:Disconnect()
+            connection = nil
+        end
+        if removeConnection then
+            removeConnection:Disconnect()
+            removeConnection = nil
+        end
+        for _, v in pairs(esp) do
+            for _, drawing in pairs(v) do
+                if drawing and drawing.Remove then
+                    drawing:Remove()
+                end
+            end
+        end
+        esp = {}
+    end
+end)
+
+
+
+
+
+------------------------ ESP DEAD BODY ------------------------
+-- ✅ Dead Body ESP
+local espBodies = {}
+local trackedBodies = {}
+local renderConnection = nil
+local toggleState = false
+
+local function createText()
+    local text = Drawing.new("Text")
+    text.Size = 14
+    text.Center = true
+    text.Outline = true
+    text.Text = "Dead"
+    text.Visible = true
+    text.Color = Color3.fromHSV(0, 1, 1)
+    return text
+end
+
+local function removeAllBodyESP()
+    for _, text in pairs(espBodies) do
+        if text and text.Remove then
+            text:Remove()
+        end
+    end
+    espBodies = {}
+    trackedBodies = {}
+end
+
+local function isValidBodyModel(model)
+    return model:IsA("Model") and (model:FindFirstChild("DeadPart") or model:FindFirstChild("DeadParasite") or model.PrimaryPart)
+end
+
+local function getBodyPosition(model)
+    if model:FindFirstChild("DeadPart") then
+        return model.DeadPart.Position
+    elseif model:FindFirstChild("DeadParasite") then
+        return model.DeadParasite.Position
+    elseif model.PrimaryPart then
+        return model.PrimaryPart.Position
+    end
+    return nil
+end
+
+Tabs.ESP:AddToggle("DeadESP_Toggle", {
+    Title = "Dead Body ESP",
+    Default = false,
+    Callback = function(state)
+        toggleState = state
+
+        if renderConnection then
+            renderConnection:Disconnect()
+            renderConnection = nil
+        end
+
+        removeAllBodyESP()
+        if not state then return end
+
+        renderConnection = RunService.RenderStepped:Connect(function()
+            local BodiesFolder = workspace:FindFirstChild("Bodies")
+            if not BodiesFolder then
+                removeAllBodyESP()
+                return
+            end
+
+            for _, body in pairs(BodiesFolder:GetChildren()) do
+                if isValidBodyModel(body) and not espBodies[body] then
+                    espBodies[body] = createText()
+
+                    if not trackedBodies[body] then
+                        trackedBodies[body] = true
+
+                        pcall(function()
+                            StarterGui:SetCore("SendNotification", {
+                                Title = "Dead Body Found",
+                                Text = "A body has been detected!",
+                                Duration = 3
+                            })
+                        end)
+                    end
+                end
+            end
+
+            local hue = (tick() * 0.2) % 1
+            local rainbowColor = Color3.fromHSV(hue, 1, 1)
+
+            for body, text in pairs(espBodies) do
+                if not body or not body:IsDescendantOf(BodiesFolder) then
+                    text:Remove()
+                    espBodies[body] = nil
+                    trackedBodies[body] = nil
+                    continue
+                end
+
+                local pos = getBodyPosition(body)
+                if pos then
+                    local screenPos, onScreen = Camera:WorldToViewportPoint(pos)
+                    if onScreen then
+                        text.Position = Vector2.new(screenPos.X, screenPos.Y - 20)
+                        text.Color = rainbowColor
+                        text.Visible = true
+                    else
+                        text.Visible = false
+                    end
+                else
+                    text.Visible = false
+                end
+            end
+        end)
+    end
+})
+
+
+
+
+
+------------------------ COMBAT ------------------------
+
+
+
+------------------------ KILL PLAYER ------------------------
+
+
+
+
+
+
+------------------------ BRING PLAYER ------------------------
+
+
+
+
+
+
+
+------------------------ FOV VIEW ------------------------
+local DEFAULT_FOV = Camera and Camera.FieldOfView or 70
+
+Tabs.Player:AddToggle("ZoomToggle", {
+    Title = "Max View",
+    Description = "Sets your camera FOV to maximum for better vision.",
+    Default = false,
+    Callback = function(state)
+        local currentCamera = workspace.CurrentCamera
+        if not currentCamera then
+            warn("Camera not found. Cannot toggle Max View.")
+            return
+        end
+
+        if state then
+            DEFAULT_FOV = currentCamera.FieldOfView
+            currentCamera.FieldOfView = 120
+        else
+            currentCamera.FieldOfView = DEFAULT_FOV
+        end
+    end
+})
+
+Tabs.Player:AddToggle("NoFogAndLightEffect", {
+    Title = "Full Brightness",
+    Description = "Removes fog and disables light sabotage effects.",
+    Default = false,
+    Callback = function(state)
+        local player = Players.LocalPlayer
+        local playerGui = player and player:FindFirstChild("PlayerGui")
+
+        if state then
+            noFogLightLoop = RunService.RenderStepped:Connect(function()
+                if Lighting then
+                    Lighting.FogStart = 1e10
+                    Lighting.FogEnd = 1e10
+                end
+
+                local effects = playerGui and playerGui:FindFirstChild("EffectsM")
+                if effects and effects.Enabled then
+                    effects.Enabled = false
+                end
+            end)
+        else
+            if noFogLightLoop then
+                noFogLightLoop:Disconnect()
+                noFogLightLoop = nil
+            end
+
+            if Lighting then
+                Lighting.FogStart = 0
+                Lighting.FogEnd = 1000
+            end
+
+            local effects = playerGui and playerGui:FindFirstChild("EffectsM")
+            if effects then
+                effects.Enabled = true
+            end
+        end
+    end
+})
+
+
+
+
+
+------------------------ WALLHACK ------------------------
+local ToggleWallhack = Tabs.Player:AddToggle("WallhackToggle", {
+    Title = "Wallhack",
+    Description = "Walk through walls",
+    Default = false
+})
+
+local noclipConnection
+
+ToggleWallhack:OnChanged(function(enabled)
+    local player = Players.LocalPlayer
+    if enabled then
+        noclipConnection = RunService.Stepped:Connect(function()
+            local character = player.Character
+            local hrp = character and character:FindFirstChild("HumanoidRootPart")
+
+            if hrp then
+                for _, part in ipairs(character:GetDescendants()) do
+                    if part:IsA("BasePart") and part.CanCollide then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end)
+    else
+        if noclipConnection then
+            noclipConnection:Disconnect()
+            noclipConnection = nil
+        end
+
+        local character = player.Character
+        if character then
+            for _, part in ipairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+        end
+    end
+end)
+
+
+
+
+------------------------ Misc ------------------------
+local mapNames = {
+    "Nova Corp",
+    "Big Skeld",
+    "Polus"
+}
+
+Tabs.Misc:AddButton({
+    Title = "Emergency Button",
+    Description = "Force emergency meeting on any map",
+    Callback = function()
+        print("Emergency button pressed!")
+
+        local found = false
+        for _, mapName in ipairs(mapNames) do
+            local map = workspace:FindFirstChild(mapName)
+            if map then
+                local button = map:FindFirstChild("DiscussButton")
+                if button then
+                    local interact = button:FindFirstChild("Interact")
+                    if interact then
+                        interact:InvokeServer(button)
+                        print("Emergency triggered on:", mapName)
+                        found = true
+                        break
+                    end
+                end
+            end
+        end
+
+        if not found then
+            warn("No emergency button found. You're probably in the lobby.")
+            StarterGui:SetCore("SendNotification", {
+                Title = "Not Available",
+                Text = "No emergency button found on any map.",
+                Duration = 3
+            })
+        end
+    end
+})
+
+
+
+
+
+
+
+
+
+
+--[[
+
+Tabs.Misc:AddButton({
+    Title = "Complete All Tasks",
+    Description = "Instantly completes all your tasks if available",
+    Callback = function()
+        local player = game:GetService("Players").LocalPlayer
+        local taskFolder = player:FindFirstChild("Tasks")
+        if not taskFolder then return end
+
+        local allTasks = {
+            "Calibrate",
+            "Card",
+            "CleanerO2",
+            "Shields",
+            "Spray",
+            "Spray1",
+            "Spray2",
+            "Spray3",
+            "ChopIngredients",
+            "ConnectElectricity",
+            "Energy",
+            "EnergySetup",
+            "Navigation",
+            "Reactor",
+            "Scanner",
+            "Wifi",
+            "Wires",
+            "ActivateTubes",
+            "ArmoryPutMissile",
+            "ArmoryTakeMissile",
+            "IcePot"
+        }
+
+        for _, taskName in ipairs(allTasks) do
+            local task = taskFolder:FindFirstChild(taskName)
+            if task and task:FindFirstChild("Completed") then
+                task.Completed.Value = true
+            end
+        end
+    end
+})
+
+]]
+
+
+------------------------ END ------------------------
+
+
+
+
+
+
+
+Window:SelectInfo(1)
