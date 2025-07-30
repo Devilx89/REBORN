@@ -488,12 +488,42 @@ Tabs.ESP:AddToggle("DeadESP_Toggle", {
 
 
 ------------------------ FOV VIEW ------------------------
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local fullVisionToggle = Tabs.Player:AddToggle("ForceSpectate", {
+    Title = "Full vision",
+    Description = "Unlock Full Vision",
+    Default = true, -- ✅ default is already ON
+    Callback = function(state)
+        local states = LocalPlayer:FindFirstChild("States")
+        local spectateView = states and states:FindFirstChild("SpectateView")
+
+        if spectateView and typeof(spectateView.Value) == "boolean" then
+            spectateView.Value = state
+        else
+            warn("SpectateView not found or unavailable.")
+        end
+    end
+})
+
+-- ✅ Force it to apply immediately on script hub load
+task.delay(0.5, function()
+    local states = LocalPlayer:FindFirstChild("States")
+    local spectateView = states and states:FindFirstChild("SpectateView")
+
+    if spectateView and typeof(spectateView.Value) == "boolean" then
+        spectateView.Value = true
+    end
+end)
+
+
 local DEFAULT_FOV = Camera and Camera.FieldOfView or 70
 
 Tabs.Player:AddToggle("ZoomToggle", {
     Title = "Max View",
     Description = "Sets your camera FOV to maximum for better vision.",
-    Default = false,
+    Default = true,
     Callback = function(state)
         local currentCamera = workspace.CurrentCamera
         if not currentCamera then
@@ -513,7 +543,7 @@ Tabs.Player:AddToggle("ZoomToggle", {
 Tabs.Player:AddToggle("NoFogAndLightEffect", {
     Title = "Full Brightness",
     Description = "Removes fog and disables light sabotage effects.",
-    Default = false,
+    Default = true,
     Callback = function(state)
         local player = Players.LocalPlayer
         local playerGui = player and player:FindFirstChild("PlayerGui")
