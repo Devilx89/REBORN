@@ -518,22 +518,22 @@ task.delay(0.5, function()
 end)
 
 
-local maxViewEnabled = false
+local maxViewToggle = false
 
-Tabs.Player:AddButton({
+Tabs.Player:AddToggle("MaxViewToggle", {
     Title = "Max View",
-    Description = "high zoom distance view",
-    Callback = function()
+    Description = "maximum zoom distance",
+    Default = true,
+    Callback = function(state)
+        maxViewToggle = state
         local player = game.Players.LocalPlayer
 
-        if not maxViewEnabled then
+        if maxViewToggle then
             player.CameraMaxZoomDistance = 500
             player.CameraMinZoomDistance = 0.5
-            maxViewEnabled = true
         else
-            player.CameraMaxZoomDistance = 10 -- Default Roblox max zoom
-            player.CameraMinZoomDistance = 0.5 -- Default Roblox min zoom
-            maxViewEnabled = false
+            player.CameraMaxZoomDistance = 10
+            player.CameraMinZoomDistance = 0.5
         end
     end
 })
