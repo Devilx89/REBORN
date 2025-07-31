@@ -518,24 +518,22 @@ task.delay(0.5, function()
 end)
 
 
-local DEFAULT_FOV = Camera and Camera.FieldOfView or 70
+local maxViewEnabled = false
 
-Tabs.Player:AddToggle("ZoomToggle", {
+Tabs.Player:AddButton({
     Title = "Max View",
-    Description = "Sets your camera FOV to maximum for better vision.",
-    Default = true,
-    Callback = function(state)
-        local currentCamera = workspace.CurrentCamera
-        if not currentCamera then
-            warn("Camera not found. Cannot toggle Max View.")
-            return
-        end
+    Description = "high zoom distance view",
+    Callback = function()
+        local player = game.Players.LocalPlayer
 
-        if state then
-            DEFAULT_FOV = currentCamera.FieldOfView
-            currentCamera.FieldOfView = 120
+        if not maxViewEnabled then
+            player.CameraMaxZoomDistance = 500
+            player.CameraMinZoomDistance = 0.5
+            maxViewEnabled = true
         else
-            currentCamera.FieldOfView = DEFAULT_FOV
+            player.CameraMaxZoomDistance = 10 -- Default Roblox max zoom
+            player.CameraMinZoomDistance = 0.5 -- Default Roblox min zoom
+            maxViewEnabled = false
         end
     end
 })
