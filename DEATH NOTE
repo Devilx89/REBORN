@@ -10,6 +10,11 @@ local Window = Fluent:CreateWindow({
     MinimizeKey = Enum.KeyCode.LeftAlt
 })
 
+function MakeScriptHub() 
+  loadstring(game:HttpGet("https://raw.githubusercontent.com/VGXMODPLAYER68/VGXMOD-REBORN/main/Vgxmod%20X%20Death%20Note"))() --Put Your Script
+end
+
+
 local Tabs = {
     Info = Window:AddTab({ Title = "Info", Icon = "info" }),
     Main = Window:AddTab({ Title = "Main", Icon = "layout-dashboard" }),
@@ -36,6 +41,111 @@ Tabs.Info:AddButton({
         })
     end
 })
+
+
+
+
+
+
+
+
+getgenv().Key = "FRXwAltfkvI7vwXWdjeAqzCFmHIK4QZVpwCRUgAvbzVzQkwS6x" --Put Your Password
+getgenv().KeyInput = "string" --???
+
+    Tabs.Main:AddParagraph({
+        Title = "Key System",
+        Content = "Only Have Key Can Use Pro Feature"
+    }) --Paragraph You Can Remove This
+
+local Input = Tabs.Main:AddInput("Input", {
+        Title = "Type Key",
+        Default = "",
+        Placeholder = "Placeholder",
+        Numeric = false, -- Only allows numbers
+        Finished = true, -- Only calls callback when you press enter
+        Callback = function(txt)
+            getgenv().KeyInput = txt
+        end
+    }) --Textbox/This Is Where  to Put The key
+
+
+Tabs.Main:AddButton({
+    Title = "Get Key",
+    Description = "",
+    Callback = function()
+        setclipboard("https://discord.gg/n9gtmefsjc")
+        Fluent:Notify({
+            Title = "",
+            Content = "",
+            SubContent = "Link copied to clipboard! Paste it in your browser.",
+            Duration = 5
+        })
+    end
+})
+
+    Tabs.Main:AddButton({
+        Title = "Check Key",
+        Description = "",
+        Callback = function()
+            Window:Dialog({
+                Title = "Title",
+                Content = "This is a dialog",
+                Buttons = {
+                    {
+                        Title = "Confirm",
+                        Callback = function()
+                        
+                                    if getgenv().KeyInput == getgenv().Key then
+                                    
+                                    Fluent:Notify({
+    Title = "Checking Key",
+    Content = "Please Wait",
+    Duration = 3
+})
+wait(3)
+Fluent:Notify({
+    Title = "Correct Key",
+    Content = "The Script Will Load In A Few Seconds.",
+    Duration = 2
+})
+wait(2)
+Fluent:Destroy()
+wait(1)
+MakeScriptHub()
+
+else
+                            Fluent:Notify({
+    Title = "Checking Key",
+    Content = "Please Wait",
+    Duration = 1
+})
+wait(1)
+Fluent:Notify({
+    Title = "Incorrect Key",
+    Content = "Please Get Key The Key.",
+    Duration = 2
+})
+                        end
+                                end
+
+                    },
+                    {
+                        Title = "Cancel",
+                        Callback = function()
+
+                        end
+                    }
+                }
+            })
+        end
+    })--Checks The Key
+    
+    
+    
+    
+
+
+
 
 
 
