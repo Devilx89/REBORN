@@ -49,96 +49,89 @@ Tabs.Info:AddButton({
 
 
 
-getgenv().Key = "FRXwAltfkvI7vwXWdjeAqzCFmHIK4QZVpwCRUgAvbzVzQkwS6x" --Put Your Password
-getgenv().KeyInput = "string" --???
-
-    Tabs.Main:AddParagraph({
-        Title = "Key System",
-        Content = "Only Have Key Can Use Pro Feature"
-    }) --Paragraph You Can Remove This
-
-local Input = Tabs.Main:AddInput("Input", {
-        Title = "Type Key",
-        Default = "",
-        Placeholder = "Placeholder",
-        Numeric = false, -- Only allows numbers
-        Finished = true, -- Only calls callback when you press enter
-        Callback = function(txt)
-            getgenv().KeyInput = txt
-        end
-    }) --Textbox/This Is Where  to Put The key
+-- KEY SYSTEM
 
 
+
+    
+    
+
+--// Set your key here
+getgenv().Key = "Good"
+getgenv().KeyInput = ""
+
+-- Add paragraph to UI
+Tabs.Main:AddParagraph({
+    Title = "Key System",
+    Content = "You must enter the correct key to access Pro features."
+})
+
+-- Input box for the key
+Tabs.Main:AddInput("KeyInputBox", {
+    Title = "Enter Key",
+    Default = "",
+    Placeholder = "Paste your key here...",
+    Numeric = false,
+    Finished = true,
+    Callback = function(input)
+        getgenv().KeyInput = input
+    end
+})
+
+-- Button to get the key (Discord link)
 Tabs.Main:AddButton({
     Title = "Get Key",
-    Description = "",
+    Description = "Copy the key link to your clipboard.",
     Callback = function()
         setclipboard("https://discord.gg/n9gtmefsjc")
         Fluent:Notify({
-            Title = "",
-            Content = "",
-            SubContent = "Link copied to clipboard! Paste it in your browser.",
+            Title = "Link Copied",
+            Content = "Paste it in your browser to get the key.",
             Duration = 5
         })
     end
 })
 
-    Tabs.Main:AddButton({
-        Title = "Check Key",
-        Description = "",
-        Callback = function()
-            Window:Dialog({
-                Title = "Continue",
-                Content = "",
-                Buttons = {
-                    {
-                        Title = "Confirm",
-                        Callback = function()
-                        
-                                    if getgenv().KeyInput == getgenv().Key then
-                                    
-                                    Fluent:Notify({
-    Title = "Checking Key",
-    Content = "Please Wait",
-    Duration = 3
-})
-wait(3)
-Fluent:Notify({
-    Title = "Correct Key",
-    Content = "The Script Will Load In A Few Seconds.",
-    Duration = 2
-})
-wait(2)
-Fluent:Destroy()
-wait(1)
-MakeScriptHub()
+-- Button to check the key
+Tabs.Main:AddButton({
+    Title = "Check Key",
+    Description = "Verify the entered key.",
+    Callback = function()
+        Fluent:Notify({
+            Title = "Checking Key",
+            Content = "Please wait...",
+            Duration = 2
+        })
 
-else
-                            Fluent:Notify({
-    Title = "Checking Key",
-    Content = "Please Wait",
-    Duration = 1
-})
-wait(1)
-Fluent:Notify({
-    Title = "Incorrect Key",
-    Content = "Please Get Key The Key.",
-    Duration = 2
-})
-                        end
-                                end
+        task.wait(2)
 
-                    },
-                    {
-                        Title = "Cancel",
-                        Callback = function()
+        if getgenv().KeyInput == getgenv().Key then
+            Fluent:Notify({
+                Title = "Access Granted",
+                Content = "Correct key. Loading script...",
+                Duration = 2
+            })
 
-                        end
-                    }
-                }
+            task.wait(2)
+            Fluent:Destroy()
+            task.wait(1)
+            MakeScriptHub()
+        else
+            Fluent:Notify({
+                Title = "Access Denied",
+                Content = "Invalid key. Please get the correct key.",
+                Duration = 3
             })
         end
-    })--Checks The Key
+    end
+})
+
+
+
+
+
+
+-- Keys system end
     
     
     
