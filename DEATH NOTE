@@ -57,7 +57,7 @@ Tabs.Info:AddButton({
     
 
 --// Set your key here
-getgenv().Key = "Good"
+getgenv().Key = "Good900900"
 getgenv().KeyInput = ""
 
 -- Add paragraph to UI
