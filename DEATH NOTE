@@ -461,7 +461,6 @@ Tabs.Esp:AddToggle("DeathNoteLineESP", {
 	Title = "Esp Line Kira",
 	Default = false
 }):OnChanged(function(state)
-	-- Cleanup all
 	for _, conn in pairs(lineConnections) do
 		conn:Disconnect()
 	end
@@ -502,7 +501,8 @@ Tabs.Esp:AddToggle("DeathNoteLineESP", {
 				local screenPos, onScreen = Camera:WorldToViewportPoint(rootPos)
 
 				if onScreen then
-					line.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+					local center = Vector2.new(Camera.ViewportSize.X * 0.5, Camera.ViewportSize.Y * 0.5)
+					line.From = center
 					line.To = Vector2.new(screenPos.X, screenPos.Y)
 					line.Visible = true
 				else
