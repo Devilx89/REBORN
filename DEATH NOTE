@@ -88,8 +88,8 @@ Tabs.Main:AddButton({
         Description = "",
         Callback = function()
             Window:Dialog({
-                Title = "Title",
-                Content = "This is a dialog",
+                Title = "Continue",
+                Content = "",
                 Buttons = {
                     {
                         Title = "Confirm",
