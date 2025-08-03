@@ -1,0 +1,863 @@
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+
+local Window = Fluent:CreateWindow({
+    Title = "Vgxmod X Silent Mansion",
+    SubTitle = "by Pkgx1",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(470, 260),
+    Acrylic = false,
+    Theme = "Darker",
+    MinimizeKey = Enum.KeyCode.LeftAlt
+})
+
+local Tabs = {
+    Info = Window:AddTab({ Title = "Info", Icon = "info" }),
+    Main = Window:AddTab({ Title = "Main", Icon = "layout-dashboard" }),
+    Esp = Window:AddTab({ Title = "Esp", Icon = "eye" }),    
+    Player = Window:AddTab({ Title = "Player", Icon = "user" }),
+    
+}
+
+Tabs.Info:AddParagraph({
+    Title = "Welcome to Vgxmod",
+    Content = "Kindly Request Script"
+})
+
+Tabs.Info:AddButton({
+    Title = "Discord",
+    Description = "",
+    Callback = function()
+        setclipboard("https://discord.gg/n9gtmefsjc")
+        Fluent:Notify({
+            Title = "Vgxmod X Hub",
+            Content = "Discord Link",
+            SubContent = "Link copied to clipboard! Paste it in your browser.",
+            Duration = 5
+        })
+    end
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--[[
+██╗░░░██╗░██████╗░██╗░░██╗███╗░░░███╗░█████╗░██████╗░
+██║░░░██║██╔════╝░╚██╗██╔╝████╗░████║██╔══██╗██╔══██╗
+╚██╗░██╔╝██║░░██╗░░╚███╔╝░██╔████╔██║██║░░██║██║░░██║
+░╚████╔╝░██║░░╚██╗░██╔██╗░██║╚██╔╝██║██║░░██║██║░░██║
+░░╚██╔╝░░╚██████╔╝██╔╝╚██╗██║░╚═╝░██║╚█████╔╝██████╔╝
+░░░╚═╝░░░░╚═════╝░╚═╝░░╚═╝╚═╝░░░░░╚═╝░╚════╝░╚═════╝░
+]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+local Section = Tabs.Main:AddSection("MONSTER / AVOID")
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+
+local tpHeight = 20
+local detectionRadius = 30
+local autoTPEnabled = false
+local isTeleported = false
+local originalPosition = nil
+
+local function getCharacter()
+	return LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+end
+
+local function getHumanoidRootPart()
+	local char = getCharacter()
+	return char and char:FindFirstChild("HumanoidRootPart")
+end
+
+local function teleportAbove()
+	local root = getHumanoidRootPart()
+	if root then
+		originalPosition = root.Position
+		root.CFrame = CFrame.new(originalPosition + Vector3.new(0, tpHeight, 0))
+		isTeleported = true
+	end
+end
+
+local function returnToOriginal()
+	local root = getHumanoidRootPart()
+	if root and originalPosition then
+		root.CFrame = CFrame.new(originalPosition)
+		isTeleported = false
+	end
+end
+
+local function monsterNearby()
+	local monsterFolder = workspace:FindFirstChild("Monster2")
+	if not monsterFolder then return false end
+
+	for _, mon in ipairs(monsterFolder:GetDescendants()) do
+		if mon:IsA("BasePart") then
+			local root = getHumanoidRootPart()
+			if root then
+				local distance = (root.Position - mon.Position).Magnitude
+				if distance <= detectionRadius then
+					return true
+				end
+			end
+		end
+	end
+	return false
+end
+
+-- Continuous check loop
+RunService.RenderStepped:Connect(function()
+	if not autoTPEnabled then return end
+
+	local near = monsterNearby()
+
+	if near and not isTeleported then
+		teleportAbove()
+	elseif not near and isTeleported then
+		returnToOriginal()
+	end
+end)
+
+-- Fluent UI Toggle
+Tabs.Main:AddToggle("AutoMonsterTP", {
+	Title = "Auto Safe Monster",
+	Default = false
+}):OnChanged(function(state)
+	autoTPEnabled = state
+end)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+local Interact = ReplicatedStorage:WaitForChild("Events"):FindFirstChild("InteractEvent") or ReplicatedStorage.Events.Interact
+
+-- Item finder
+local function getItemList()
+    local items = {}
+    local itemFolder = workspace:FindFirstChild("GAME") and workspace.GAME:FindFirstChild("Items")
+    if itemFolder then
+        for _, v in ipairs(itemFolder:GetDescendants()) do
+            local model = v:FindFirstAncestorWhichIsA("Model")
+            if model and not table.find(items, model.Name) then
+                table.insert(items, model.Name)
+            end
+        end
+    end
+    table.sort(items)
+    return items
+end
+
+-- Setup Fluent UI section
+local selectedItem = nil
+
+local Section = Tabs.Main:AddSection("Get Item")
+
+Section:AddDropdown("SelectItem", {
+    Title = "Select Item",
+    Values = getItemList(),
+    Multi = false,
+    Default = nil,
+}):OnChanged(function(val)
+    selectedItem = val
+end)
+
+Section:AddButton({
+    Title = "Get Item",
+    Description = "",
+    Callback = function()
+        if not selectedItem then
+            warn("No item selected.")
+            return
+        end
+
+        local itemFolder = workspace:FindFirstChild("GAME") and workspace.GAME:FindFirstChild("Items")
+        if not itemFolder then return end
+
+        for _, obj in ipairs(itemFolder:GetDescendants()) do
+            local model = obj:FindFirstAncestorWhichIsA("Model")
+            if model and model.Name == selectedItem then
+                Interact:FireServer("Item", Players.LocalPlayer, model)
+                break
+            end
+        end
+    end
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--[[
+██╗░░░██╗░██████╗░██╗░░██╗███╗░░░███╗░█████╗░██████╗░
+██║░░░██║██╔════╝░╚██╗██╔╝████╗░████║██╔══██╗██╔══██╗
+╚██╗░██╔╝██║░░██╗░░╚███╔╝░██╔████╔██║██║░░██║██║░░██║
+░╚████╔╝░██║░░╚██╗░██╔██╗░██║╚██╔╝██║██║░░██║██║░░██║
+░░╚██╔╝░░╚██████╔╝██╔╝╚██╗██║░╚═╝░██║╚█████╔╝██████╔╝
+░░░╚═╝░░░░╚═════╝░╚═╝░░╚═╝╚═╝░░░░░╚═╝░╚════╝░╚═════╝░
+]]
+
+
+
+
+
+local Section = Tabs.Esp:AddSection("NAME / ITEM")
+
+
+local ESPFolder = workspace:WaitForChild("GAME"):WaitForChild("Items")
+local activeESPs = {}
+
+-- Helper: get top-level item name
+local function getItemModelName(part)
+	local current = part
+	while current and current.Parent ~= ESPFolder do
+		current = current.Parent
+	end
+	return current and current.Name or part.Name
+end
+
+local function enableItemESP()
+	for _, part in pairs(ESPFolder:GetDescendants()) do
+		if part:IsA("BasePart") and not part:FindFirstChild("ItemESP") then
+			local billboard = Instance.new("BillboardGui")
+			billboard.Name = "ItemESP"
+			billboard.Size = UDim2.new(0, 150, 0, 30)
+			billboard.AlwaysOnTop = true
+			billboard.LightInfluence = 0
+			billboard.Adornee = part
+			billboard.Parent = part
+
+			local label = Instance.new("TextLabel")
+			label.Size = UDim2.new(1, 0, 1, 0)
+			label.BackgroundTransparency = 1
+			label.TextScaled = true
+			label.Font = Enum.Font.FredokaOne
+			label.TextColor3 = Color3.fromHSV(math.random(), 1, 1)
+			label.TextStrokeTransparency = 0.4
+			label.TextStrokeColor3 = Color3.new(0, 0, 0)
+			label.Text = getItemModelName(part)
+			label.Parent = billboard
+
+			table.insert(activeESPs, billboard)
+		end
+	end
+end
+
+local function disableItemESP()
+	for _, esp in pairs(activeESPs) do
+		if esp and esp.Parent then
+			esp:Destroy()
+		end
+	end
+	table.clear(activeESPs)
+end
+
+-- Add to Fluent UI
+Tabs.Esp:AddToggle("ESP_Items", {
+	Title = "Esp All Items",
+	Default = false,
+}):OnChanged(function(state)
+	if state then
+		enableItemESP()
+	else
+		disableItemESP()
+	end
+end)
+
+
+
+
+local selectedItem = nil
+local activeESPs = {}
+local running = false
+
+-- Function to get unique model names under workspace.GAME.Items
+local function getItemNames()
+    local folder = workspace:FindFirstChild("GAME") and workspace.GAME:FindFirstChild("Items")
+    local names = {}
+    local found = {}
+
+    if folder then
+        for _, obj in ipairs(folder:GetDescendants()) do
+            local model = obj:FindFirstAncestorWhichIsA("Model")
+            if model and not found[model.Name] then
+                table.insert(names, model.Name)
+                found[model.Name] = true
+            end
+        end
+    end
+
+    table.sort(names)
+    return names
+end
+
+-- Dropdown to choose item name
+local itemDropdown = Tabs.Esp:AddDropdown("ESPItemPicker", {
+    Title = "Choose Item to Esp",
+    Values = getItemNames(),
+    Multi = false
+})
+
+itemDropdown:OnChanged(function(value)
+    selectedItem = value
+end)
+
+-- Function to create ESP label on a part
+local function createESP(part, label)
+    if not part or part:FindFirstChild("CustomItemESP") then return end
+
+    local esp = Instance.new("BillboardGui")
+    esp.Name = "CustomItemESP"
+    esp.Adornee = part
+    esp.AlwaysOnTop = true
+    esp.Size = UDim2.new(0, 100, 0, 20)
+    esp.StudsOffset = Vector3.new(0, 2, 0)
+    esp.Parent = part
+
+    local text = Instance.new("TextLabel")
+    text.Size = UDim2.new(1, 0, 1, 0)
+    text.BackgroundTransparency = 1
+    text.Text = label
+    text.TextColor3 = Color3.fromHSV(math.random(), 1, 1)
+    text.TextStrokeTransparency = 0.2
+    text.TextScaled = true
+    text.Font = Enum.Font.GothamBold
+    text.Parent = esp
+
+    table.insert(activeESPs, esp)
+end
+
+-- ESP logic that runs in a loop
+local function enableItemESP()
+    running = true
+    task.spawn(function()
+        while running do
+            pcall(function()
+                local folder = workspace:FindFirstChild("GAME") and workspace.GAME:FindFirstChild("Items")
+                if folder and selectedItem then
+                    for _, item in ipairs(folder:GetDescendants()) do
+                        if item:IsA("BasePart") and not item:FindFirstChild("CustomItemESP") then
+                            local model = item:FindFirstAncestorWhichIsA("Model")
+                            if model and model.Name == selectedItem then
+                                createESP(item, selectedItem)
+                            end
+                        end
+                    end
+                end
+            end)
+            task.wait(1.5)
+        end
+    end)
+end
+
+-- Stop ESP and cleanup
+local function disableItemESP()
+    running = false
+    for _, esp in pairs(activeESPs) do
+        if esp and esp.Parent then
+            esp:Destroy()
+        end
+    end
+    table.clear(activeESPs)
+end
+
+-- Toggle UI
+local toggle = Tabs.Esp:AddToggle("CustomItemESP", {
+    Title = "Esp Selected Item",
+    Default = false
+})
+
+toggle:OnChanged(function(state)
+    if state then
+        enableItemESP()
+    else
+        disableItemESP()
+    end
+end)
+
+
+
+
+
+
+
+
+
+
+
+
+local Section = Tabs.Esp:AddSection("HIGHLIGHTS / MONSTER")
+
+
+local highlight = nil
+local espName = nil
+local connection = nil
+
+local function clearESP()
+    if highlight then highlight:Destroy() end
+    if espName then espName:Destroy() end
+    highlight, espName = nil, nil
+end
+
+local function createMonsterESP(monster)
+    if not monster:IsA("Model") then return end
+    local root = monster:FindFirstChild("HumanoidRootPart") or monster:FindFirstChildWhichIsA("BasePart")
+    if not root then return end
+
+    -- Highlight
+    highlight = Instance.new("Highlight")
+    highlight.Name = "MonsterESP"
+    highlight.FillColor = Color3.fromRGB(255, 0, 0)
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.OutlineTransparency = 0
+    highlight.FillTransparency = 0.5
+    highlight.Adornee = monster
+    highlight.Parent = monster
+
+    -- Billboard ESP
+    espName = Instance.new("BillboardGui")
+    espName.Name = "MonsterESPName"
+    espName.Adornee = root
+    espName.Size = UDim2.new(0, 100, 0, 20)
+    espName.StudsOffset = Vector3.new(0, 3, 0)
+    espName.AlwaysOnTop = true
+    espName.Parent = root
+
+    local text = Instance.new("TextLabel")
+    text.Size = UDim2.new(1, 0, 1, 0)
+    text.BackgroundTransparency = 1
+    text.Text = monster.Name
+    text.TextColor3 = Color3.fromRGB(255, 0, 0)
+    text.TextStrokeTransparency = 0.3
+    text.TextScaled = true
+    text.Font = Enum.Font.GothamBold
+    text.Parent = espName
+end
+
+local function waitForMonsterAndESP()
+    if highlight or espName then clearESP() end
+
+    local monster = workspace:FindFirstChild("Monster2")
+    if monster then
+        createMonsterESP(monster)
+    else
+        connection = workspace.ChildAdded:Connect(function(child)
+            if child.Name == "Monster2" then
+                if connection then connection:Disconnect() end
+                createMonsterESP(child)
+            end
+        end)
+    end
+end
+
+-- Fluent UI Toggle
+local monsterToggle = Tabs.Esp:AddToggle("MonsterESP", {
+    Title = "Esp Highlights Monster",
+    Default = false
+})
+
+monsterToggle:OnChanged(function(state)
+    if state then
+        waitForMonsterAndESP()
+    else
+        if connection then connection:Disconnect() end
+        clearESP()
+    end
+end)
+
+
+
+
+
+
+
+local Section = Tabs.Esp:AddSection("HIGHLIGHTS / PLAYER")
+
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Track ESP elements
+local activeESP = {}
+
+-- Function to create name tag
+local function createNameTag(character, player)
+	local head = character:FindFirstChild("Head")
+	if not head then return end
+
+	-- Avoid duplicates
+	if head:FindFirstChild("ESPName") then return end
+
+	local billboard = Instance.new("BillboardGui")
+	billboard.Name = "ESPName"
+	billboard.Adornee = head
+	billboard.Size = UDim2.new(0, 100, 0, 40)
+	billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+	billboard.AlwaysOnTop = true
+	billboard.Parent = head
+
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Size = UDim2.new(1, 0, 1, 0)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Text = player.Name
+	nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- match highlight color
+	nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+	nameLabel.TextStrokeTransparency = 0
+	nameLabel.Font = Enum.Font.GothamBold
+	nameLabel.TextScaled = true
+	nameLabel.Parent = billboard
+end
+
+-- Add highlight + name tag
+local function addESP(player)
+	if player == LocalPlayer then return end
+	local character = player.Character
+	if not character then return end
+
+	if not activeESP[player] then
+		local highlight = Instance.new("Highlight")
+		highlight.Name = "PlayerESP"
+		highlight.FillColor = Color3.fromRGB(255, 255, 255)
+		highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
+		highlight.FillTransparency = 0.5
+		highlight.OutlineTransparency = 0
+		highlight.Adornee = character
+		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+		highlight.Parent = character
+		activeESP[player] = highlight
+	end
+
+	createNameTag(character, player)
+end
+
+-- Remove all ESP from player
+local function removeESP(player)
+	if activeESP[player] then
+		activeESP[player]:Destroy()
+		activeESP[player] = nil
+	end
+
+	local char = player.Character
+	if char and char:FindFirstChild("Head") then
+		local head = char.Head
+		local tag = head:FindFirstChild("ESPName")
+		if tag then tag:Destroy() end
+	end
+end
+
+-- Refresh all players
+local function refreshAllESP()
+	for _, player in ipairs(Players:GetPlayers()) do
+		addESP(player)
+	end
+end
+
+-- Fluent UI toggle
+Tabs.Esp:AddToggle("PlayerESP", {
+	Title = "Esp Highlights Players",
+	Default = false
+}):OnChanged(function(state)
+	if state then
+		refreshAllESP()
+
+		getgenv()._espConn = {
+			Players.PlayerAdded:Connect(function(p)
+				p.CharacterAdded:Connect(function()
+					task.wait(1)
+					addESP(p)
+				end)
+			end),
+
+			Players.PlayerRemoving:Connect(function(p)
+				removeESP(p)
+			end)
+		}
+
+		for _, player in ipairs(Players:GetPlayers()) do
+			if player ~= LocalPlayer then
+				player.CharacterAdded:Connect(function()
+					task.wait(1)
+					addESP(player)
+				end)
+			end
+		end
+
+	else
+		for _, player in ipairs(Players:GetPlayers()) do
+			removeESP(player)
+		end
+		activeESP = {}
+
+		if getgenv()._espConn then
+			for _, conn in pairs(getgenv()._espConn) do
+				conn:Disconnect()
+			end
+			getgenv()._espConn = nil
+		end
+	end
+end)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--[[
+██╗░░░██╗░██████╗░██╗░░██╗███╗░░░███╗░█████╗░██████╗░
+██║░░░██║██╔════╝░╚██╗██╔╝████╗░████║██╔══██╗██╔══██╗
+╚██╗░██╔╝██║░░██╗░░╚███╔╝░██╔████╔██║██║░░██║██║░░██║
+░╚████╔╝░██║░░╚██╗░██╔██╗░██║╚██╔╝██║██║░░██║██║░░██║
+░░╚██╔╝░░╚██████╔╝██╔╝╚██╗██║░╚═╝░██║╚█████╔╝██████╔╝
+░░░╚═╝░░░░╚═════╝░╚═╝░░╚═╝╚═╝░░░░░╚═╝░╚════╝░╚═════╝░
+]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local reviveModule = require(ReplicatedStorage.Modules.Systems.HealthController)
+
+local reviveSlider = Tabs.Player:AddSlider("ReviveDistanceSlider", {
+    Title = "Revive Distance",
+    Description = "Set max revive distance",
+    Min = 1,
+    Max = 1000,
+    Default = 20,
+    Rounding = true
+})
+
+reviveSlider:OnChanged(function(value)
+    local prompt = reviveModule and reviveModule.ReviveProximityPrompt
+    if prompt and typeof(prompt) == "Instance" then
+        prompt.MaxActivationDistance = value
+    end
+end)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+local Lighting = game:GetService("Lighting")
+local StarterLighting = {}
+
+-- Save original lighting settings
+for _, prop in ipairs({"Ambient", "OutdoorAmbient", "Brightness", "ClockTime", "FogEnd", "FogStart", "GlobalShadows"}) do
+    StarterLighting[prop] = Lighting[prop]
+end
+
+local function applyFullBright()
+    Lighting.Ambient = Color3.new(1, 1, 1)
+    Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
+    Lighting.Brightness = 3
+    Lighting.ClockTime = 12
+    Lighting.FogEnd = 1000000
+    Lighting.FogStart = 0
+    Lighting.GlobalShadows = false
+end
+
+local function restoreOriginal()
+    for prop, value in pairs(StarterLighting) do
+        Lighting[prop] = value
+    end
+end
+
+-- Fluent toggle
+Tabs.Player:AddToggle("FullBrightToggle", {
+    Title = "Full Brightness",
+    Default = false
+}):OnChanged(function(state)
+    if state then
+        applyFullBright()
+        -- Persist fullbright using RenderStepped
+        if not getgenv()._FullBrightLoop then
+            getgenv()._FullBrightLoop = game:GetService("RunService").RenderStepped:Connect(function()
+                applyFullBright()
+            end)
+        end
+    else
+        if getgenv()._FullBrightLoop then
+            getgenv()._FullBrightLoop:Disconnect()
+            getgenv()._FullBrightLoop = nil
+        end
+        restoreOriginal()
+    end
+end)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--[[
+██╗░░░██╗░██████╗░██╗░░██╗███╗░░░███╗░█████╗░██████╗░
+██║░░░██║██╔════╝░╚██╗██╔╝████╗░████║██╔══██╗██╔══██╗
+╚██╗░██╔╝██║░░██╗░░╚███╔╝░██╔████╔██║██║░░██║██║░░██║
+░╚████╔╝░██║░░╚██╗░██╔██╗░██║╚██╔╝██║██║░░██║██║░░██║
+░░╚██╔╝░░╚██████╔╝██╔╝╚██╗██║░╚═╝░██║╚█████╔╝██████╔╝
+░░░╚═╝░░░░╚═════╝░╚═╝░░╚═╝╚═╝░░░░░╚═╝░╚════╝░╚═════╝░
+]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Window:SelectInfo(1)
