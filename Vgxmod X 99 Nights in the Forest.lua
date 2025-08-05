@@ -466,7 +466,7 @@ local excluded = {
 
 -- UI Toggle under COMBAT tab
 local Toggle1 = Tabs.Combat:AddToggle("AutoFloatNearMob", {
-    Title = "Auto Float Near Mob",
+    Title = "Auto Safe Near Mob",
     Default = false
 })
 
