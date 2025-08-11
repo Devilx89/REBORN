@@ -157,48 +157,6 @@ end)
 
 
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
--- Toggle state
-local freezeEnabled = false
-
--- Create the toggle in the "Main" tab
-Tabs.Main:AddToggle("Freeze All Monsters", {
-    Title = "Freeze All Monsters",
-    Default = false,
-    Callback = function(state)
-        freezeEnabled = state
-    end
-})
-
--- Loop to handle freezing
-task.spawn(function()
-    while true do
-        if freezeEnabled then
-            for _, monster in pairs(workspace._Characters:GetChildren()) do
-                if monster:FindFirstChild("Humanoid") and monster.Name ~= LocalPlayer.Name then
-                    monster.Humanoid.WalkSpeed = 0
-                    if monster:FindFirstChild("HumanoidRootPart") then
-                        monster.HumanoidRootPart.Anchored = true
-                    end
-                end
-            end
-        else
-            for _, monster in pairs(workspace._Characters:GetChildren()) do
-                if monster:FindFirstChild("Humanoid") and monster.Name ~= LocalPlayer.Name then
-                    if monster.Humanoid.WalkSpeed == 0 then
-                        monster.Humanoid.WalkSpeed = 16 -- default walk speed
-                    end
-                    if monster:FindFirstChild("HumanoidRootPart") then
-                        monster.HumanoidRootPart.Anchored = false
-                    end
-                end
-            end
-        end
-        task.wait(0.1)
-    end
-end)
 
 
 
@@ -627,36 +585,6 @@ ITEM_FOLDER.ChildRemoved:Connect(function(c) removeItemESP(c) end)
 
 
 
-local function disableMonsterDamage()
-    for _, char in ipairs(workspace._Characters:GetChildren()) do
-        local cowAI = char:FindFirstChild("CowAI")
-        if cowAI then
-            local dmg = cowAI:FindFirstChild("AttackDamage")
-            if dmg and dmg:IsA("NumberValue") then
-                dmg.Value = 0
-            end
-            local attacking = cowAI:FindFirstChild("Attacking")
-            if attacking and attacking:IsA("BoolValue") then
-                attacking.Value = false
-            end
-        end
-    end
-end
-
--- Keep disabling damage for any new monsters that spawn
-workspace._Characters.ChildAdded:Connect(function(char)
-    task.wait(0.1) -- wait to ensure CowAI is loaded
-    disableMonsterDamage()
-end)
-
--- Add the button to your "Main" tab
-Tabs.Player:AddButton({
-    Title = "God Mode",
-    Description = "",
-    Callback = function()
-        disableMonsterDamage()
-    end
-})
 
 
 
