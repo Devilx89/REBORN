@@ -14,7 +14,7 @@ local Tabs = {
     Info = Window:AddTab({ Title = "Info", Icon = "info" }),
     Main = Window:AddTab({ Title = "Main", Icon = "layout-dashboard" }),
     Esp = Window:AddTab({ Title = "Esp", Icon = "eye" }),    
-    Player = Window:AddTab({ Title = "Player", Icon = "user" }),    
+    
 }
 
 Tabs.Info:AddParagraph({
@@ -43,6 +43,32 @@ Tabs.Info:AddButton({
 
 
 -------------------------------------------------------------------------- MAIN ----------------------------------------------------------------------------------------
+local Section = Tabs.Main:AddSection("Player / Stamina")
+Tabs.Main:AddButton({
+    Title = "Unlimited Stamina",
+    Description = "Execute This Every Game",
+    Callback = function()
+        local StaminaModule = require(game.ReplicatedStorage.Systems.Character.Game.Sprinting)
+
+        StaminaModule.StaminaLossDisabled = true
+        task.spawn(function()
+            while true do
+                task.wait(0.1)
+                StaminaModule.Stamina = StaminaModule.MaxStamina
+                StaminaModule.StaminaChanged:Fire()
+            end
+        end)
+    end
+})
+
+
+
+
+
+
+
+
+
 
 local Section = Tabs.Main:AddSection("Auto / Generator")
 
@@ -553,38 +579,7 @@ refreshESP()
 
 -------------------------------------------------------------------------- PLAYER ----------------------------------------------------------------------------------------
 
-local StaminaModule = require(game.ReplicatedStorage.Systems.Character.Game.Sprinting)
 
-local StaminaToggle = Tabs.Player:AddToggle("InfiniteStamina", {
-    Title = "Infinite Stamina",
-    Description = "Toggle This Every Game",
-    Default = false
-})
-
-local loopTask
-
-local function startLoop()
-    if loopTask then return end
-    loopTask = task.spawn(function()
-        while StaminaToggle.Value do
-            task.wait(0.1)
-            StaminaModule.StaminaLossDisabled = true
-            StaminaModule.Stamina = StaminaModule.MaxStamina
-            StaminaModule.StaminaChanged:Fire()
-        end
-    end)
-end
-
-StaminaToggle:OnChanged(function(value)
-    if value then
-        startLoop()
-    else
-        if loopTask then
-            loopTask:Cancel()
-            loopTask = nil
-        end
-    end
-end)
 
 
 
