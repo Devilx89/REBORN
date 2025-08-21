@@ -688,7 +688,7 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = game.Players.LocalPlayer
 local guip = gethui and gethui() or game:GetService("CoreGui") or LocalPlayer:FindFirstChild("PlayerGui")
 
-local targetScale = 0 -- Amount to ADD to width/height
+local targetScale = 0
 local shootButton
 local originalWidth, originalHeight = 180, 90
 
@@ -710,8 +710,6 @@ Tab_Combat:Toggle({
                 shootButton.BackgroundTransparency = 0.5
                 shootButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
                 shootButton.BorderSizePixel = 0
-
-                -- Text properties
                 shootButton.Text = "Shoot\nMurder"
                 shootButton.TextColor3 = Color3.fromRGB(255, 255, 255)
                 shootButton.TextScaled = true
@@ -720,23 +718,19 @@ Tab_Combat:Toggle({
                 shootButton.TextXAlignment = Enum.TextXAlignment.Center
                 shootButton.TextStrokeTransparency = 1
                 shootButton.TextWrapped = true
-
                 shootButton.Active = true
                 shootButton.Draggable = true
                 shootButton.Parent = GunGui
 
-                -- Rounded corners
                 local corner = Instance.new("UICorner")
                 corner.CornerRadius = UDim.new(0, 20)
                 corner.Parent = shootButton
 
-                -- Rainbow border
                 local border = Instance.new("UIStroke")
                 border.Thickness = 3
                 border.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
                 border.Parent = shootButton
 
-                -- Smooth rainbow animation (slow, like grab gun)
                 local hue = 0
                 RunService.RenderStepped:Connect(function(deltaTime)
                     if shootButton and shootButton.Parent then
@@ -745,11 +739,9 @@ Tab_Combat:Toggle({
                     end
                 end)
 
-                -- Aspect ratio constraint
                 local UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint", shootButton)
                 UIAspectRatioConstraint.AspectRatio = originalWidth / originalHeight
 
-                -- Shoot functionality
                 local function getMurdererTarget()
                     local data = game:GetService("ReplicatedStorage"):FindFirstChild("GetPlayerData", true):InvokeServer()
                     for plrName, plrData in pairs(data) do
@@ -766,9 +758,15 @@ Tab_Combat:Toggle({
 
                 shootButton.MouseButton1Click:Connect(function()
                     local Char = LocalPlayer.Character
-                    if Char and Char:FindFirstChild("Gun") then
+                    if not Char then return end
+                    local backpack = LocalPlayer:FindFirstChild("Backpack")
+                    if backpack and backpack:FindFirstChild("Gun") and not Char:FindFirstChild("Gun") then
+                        backpack.Gun.Parent = Char
+                        task.wait(0.1)
+                    end
+                    local gun = Char:FindFirstChild("Gun")
+                    if gun then
                         pcall(function()
-                            local gun = Char.Gun
                             local knifeScript = gun:FindFirstChild("KnifeLocal")
                             local cb = knifeScript and knifeScript:FindFirstChild("CreateBeam")
                             local remote = cb and cb:FindFirstChild("RemoteFunction")
@@ -780,18 +778,14 @@ Tab_Combat:Toggle({
                     end
                 end)
 
-                -- Smooth additive scaling
                 RunService.RenderStepped:Connect(function()
                     if shootButton and shootButton.Parent then
                         local currentX = shootButton.Size.X.Offset
                         local currentY = shootButton.Size.Y.Offset
-
                         local desiredX = originalWidth + targetScale
                         local desiredY = originalHeight + targetScale
-
                         local newX = currentX + (desiredX - currentX) * 0.1
                         local newY = currentY + (desiredY - currentY) * 0.1
-
                         shootButton.Size = UDim2.new(0, newX, 0, newY)
                         shootButton.TextSize = 12 * (newY / originalHeight)
                     end
