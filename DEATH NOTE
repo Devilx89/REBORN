@@ -1,128 +1,155 @@
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
-local Window = Fluent:CreateWindow({
-    Title = "Vgxmod X Death Note",
-    SubTitle = "by Pkgx1",
-    TabWidth = 160,
-    Size = UDim2.fromOffset(470, 260),
-    Acrylic = false,
-    Theme = "Darker",
-    MinimizeKey = Enum.KeyCode.LeftAlt
+WindUI:Localization({
+    Enabled = true,
+    Prefix = "loc:",
+    DefaultLanguage = "en",
+    Translations = {
+        ["en"] = {
+            ["WINDUI_EXAMPLE"] = "Vgxmod Hub",
+            ["WELCOME"] = "https://discord.gg/n9gtmefsjc",
+            ["Info"] = "Info",
+            ["Main"] = "Main",
+            ["Automation"] = "Automation",
+            ["Player"] = "Player",
+            ["Combat"] = "Combat",
+            ["Visual"] = "Visual",
+            ["Teleport"] = "Teleport"
+        }
+    }
 })
 
-function MakeScriptHub() 
-  loadstring(game:HttpGet("https://raw.githubusercontent.com/VGXMODPLAYER68/VGXMOD-REBORN/main/Vgxmod%20X%20Death%20Note"))() --Put Your Script
-end
+WindUI.TransparencyValue = 0.2
+WindUI:SetTheme("Dark")
 
-
-local Tabs = {
-    Info = Window:AddTab({ Title = "Info", Icon = "info" }),
-    Main = Window:AddTab({ Title = "Main", Icon = "layout-dashboard" }),
-    Esp = Window:AddTab({ Title = "Esp", Icon = "eye" }),
-    Player = Window:AddTab({ Title = "Player", Icon = "user" }),
-    
-}
-
-Tabs.Info:AddParagraph({
-    Title = "Welcome to Vgxmod",
-    Content = "Kindly Request Script"
-})
-
-Tabs.Info:AddButton({
-    Title = "Discord",
-    Description = "",
-    Callback = function()
-        setclipboard("https://discord.gg/n9gtmefsjc")
-        Fluent:Notify({
-            Title = "Vgxmod X Hub",
-            Content = "Discord Link",
-            SubContent = "Link copied to clipboard! Paste it in your browser.",
-            Duration = 5
-        })
-    end
-})
-
-
-
-
-
-
-
-
--- KEY SYSTEM
-
-
-
-    
-    
-
---// Set your key here
-getgenv().Key = "Good900900"
-getgenv().KeyInput = ""
-
--- Add paragraph to UI
-Tabs.Main:AddParagraph({
-    Title = "Key System",
-    Content = "You must enter the correct key to access Pro features."
-})
-
--- Input box for the key
-Tabs.Main:AddInput("KeyInputBox", {
-    Title = "Enter Key",
-    Default = "",
-    Placeholder = "Paste your key here...",
-    Numeric = false,
-    Finished = true,
-    Callback = function(input)
-        getgenv().KeyInput = input
-    end
-})
-
--- Button to get the key (Discord link)
-Tabs.Main:AddButton({
-    Title = "Get Key",
-    Description = "Copy the key link to your clipboard.",
-    Callback = function()
-        setclipboard("https://discord.gg/n9gtmefsjc")
-        Fluent:Notify({
-            Title = "Link Copied",
-            Content = "Paste it in your browser to get the key.",
-            Duration = 5
-        })
-    end
-})
-
--- Button to check the key
-Tabs.Main:AddButton({
-    Title = "Check Key",
-    Description = "Verify the entered key.",
-    Callback = function()
-        Fluent:Notify({
-            Title = "Checking Key",
-            Content = "Please wait...",
-            Duration = 2
-        })
-
-        task.wait(2)
-
-        if getgenv().KeyInput == getgenv().Key then
-            Fluent:Notify({
-                Title = "Access Granted",
-                Content = "Correct key. Loading script...",
-                Duration = 2
-            })
-
-            task.wait(2)
-            Fluent:Destroy()
-            task.wait(1)
-            MakeScriptHub()
-        else
-            Fluent:Notify({
-                Title = "Access Denied",
-                Content = "Invalid key. Please get the correct key.",
+local Window = WindUI:CreateWindow({
+    Title = "loc:WINDUI_EXAMPLE",
+    Icon = "moon",
+    Folder = "WindUI_Example",
+    Size = UDim2.fromOffset(580, 490),
+    Theme = "Dark",
+    SideBarWidth = 200,
+    User = {
+        Enabled = true,
+        Anonymous = false,
+        Callback = function()
+            WindUI:Notify({
+                Title = "Profile",
+                Content = "You clicked the profile!",
                 Duration = 3
             })
         end
+    }
+})
+
+local Tab_Info = Window:Tab({ Title = "Info", Icon = "info" })
+local Tab_Main = Window:Tab({ Title = "Main", Icon = "layout-grid" })
+local Tab_Player = Window:Tab({ Title = "Player", Icon = "user" })
+local Tab_Visual = Window:Tab({ Title = "Visual", Icon = "eye" })
+local Tab_Teleport = Window:Tab({ Title = "Teleport", Icon = "map-pin" })
+
+Tab_Info:Paragraph({
+    Title = "Discord Link",
+    Desc = "Kindly request the script on my Discord server.",
+    Image = "user-plus",
+    ImageSize = 20,
+    Color = "Grey",
+    Buttons = {
+        {
+            Title = "Copy Link",
+            Icon = "copy",
+            Variant = "Tertiary",
+            Callback = function()
+                setclipboard("https://discord.gg/n9gtmefsjc")
+                WindUI:Notify({
+                    Title = "Copied!",
+                    Content = "Discord link copied to clipboard",
+                    Duration = 2
+                })
+            end
+        }
+    }
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+local EspSection = Tab_Main:Section({ Title = "AUTOMATION" })
+
+
+getgenv().AutoCrateSearch = false
+getgenv().CrateDistance = 10
+
+local Players = game:GetService("Players")
+local Client = Players.LocalPlayer
+local Map = workspace:WaitForChild("Map")
+
+local function GetCrates()
+    local crates = {}
+    for _, obj in pairs(Map:GetChildren()) do
+        if obj.Name == "Crate" then
+            table.insert(crates, obj)
+        end
+    end
+    return crates
+end
+
+local function InteractCrate(crate)
+    if crate:FindFirstChild("BinPrompt") then
+        crate.BinPrompt.HoldDuration = 0
+        crate.BinPrompt.MaxActivationDistance = getgenv().CrateDistance
+        crate.BinPrompt.RequiresLineOfSight = false
+        fireproximityprompt(crate.BinPrompt)
+    end
+end
+
+local function AutoSearch()
+    spawn(function()
+        while getgenv().AutoCrateSearch do
+            local crates = GetCrates()
+            if #crates == 0 then
+                task.wait(1)
+                continue
+            end
+            for _, crate in pairs(crates) do
+                if not getgenv().AutoCrateSearch then break end
+                if Client.Character and Client.Character:FindFirstChild("HumanoidRootPart") then
+                    Client.Character.HumanoidRootPart.CFrame = crate.CFrame + Vector3.new(0, 1, 0)
+                    InteractCrate(crate)
+                    task.wait(1.3)
+                end
+            end
+            task.wait(0.5)
+        end
+    end)
+end
+
+Tab_Main:Toggle({
+    Title = "Auto Search Death Note",
+    Value = getgenv().AutoCrateSearch,
+    Callback = function(state)
+        getgenv().AutoCrateSearch = state
+        if state then
+            AutoSearch()
+        end
     end
 })
 
@@ -131,51 +158,229 @@ Tabs.Main:AddButton({
 
 
 
--- Keys system end
-    
-    
-    
-    
-
-
-
-
-
-
-
-
-
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Gamemode = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Gamemode")
+getgenv().AutoSearchIDsToggle = false
+getgenv().IDDistance = 10
 
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+local Client = Players.LocalPlayer
+local Map = workspace:WaitForChild("Map")
 
--- Replace this with your actual notification function or UI library notify method
-local function Notify(title, content, duration)
-    -- Simple example using Roblox's default notification (if available)
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = title,
-        Text = content,
-        Duration = duration or 5
-    })
+local function GetIDs()
+    local ids = {}
+    for _, obj in pairs(Map:GetChildren()) do
+        if obj.Name == "Id" and obj:FindFirstChild("IdPrompt") then
+            table.insert(ids, obj)
+        end
+    end
+    return ids
 end
 
-local connection
-
-connection = Gamemode.OnClientEvent:Connect(function(data)
-    if type(data) == "table" and data.Status == "DeathNoteBook" and typeof(data.Char) == "Instance" then
-        local char = data.Char
-        local name = "Unknown"
-
-        if char and char:FindFirstChild("Humanoid") then
-            name = char.Humanoid.DisplayName or char.Name or "Unknown"
-        elseif char.Name then
-            name = char.Name
-        end
-
-        Notify("Death Note", name .. " picked up the Death Note.", 5)
+local function InteractID(idObj)
+    if idObj:FindFirstChild("IdPrompt") then
+        idObj.IdPrompt.HoldDuration = 0
+        idObj.IdPrompt.MaxActivationDistance = getgenv().IDDistance
+        idObj.IdPrompt.RequiresLineOfSight = false
+        fireproximityprompt(idObj.IdPrompt)
     end
+end
+
+local function AutoSearchIDs()
+    spawn(function()
+        while getgenv().AutoSearchIDsToggle do
+            local ids = GetIDs()
+            if #ids == 0 then
+                task.wait(1)
+                continue
+            end
+            for _, idObj in pairs(ids) do
+                if not getgenv().AutoSearchIDsToggle then break end
+                if Client.Character and Client.Character:FindFirstChild("HumanoidRootPart") then
+                    Client.Character.HumanoidRootPart.CFrame = idObj.CFrame + Vector3.new(0,1,0)
+                    InteractID(idObj)
+                    task.wait(1.3)
+                end
+            end
+            task.wait(0.5)
+        end
+    end)
+end
+
+Tab_Main:Toggle({
+    Title = "Auto Search IDs",
+    Value = getgenv().AutoSearchIDsToggle,
+    Callback = function(state)
+        getgenv().AutoSearchIDsToggle = state
+        if state then
+            AutoSearchIDs()
+        end
+    end
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+local EspSection = Tab_Main:Section({ Title = "INTERACT" })
+
+getgenv().AutoFiddleCrates = false
+getgenv().FiddleCratesDistance = 10
+
+Tab_Main:Toggle({
+    Title = "Instant Search Crates",
+    Value = getgenv().AutoFiddleCrates,
+    Callback = function(state)
+        getgenv().AutoFiddleCrates = state
+        local Map = workspace:WaitForChild("Map")
+        for _, crate in pairs(Map:GetChildren()) do
+            if crate.Name == "Crate" and crate:FindFirstChild("BinPrompt") then
+                if state then
+                    crate.BinPrompt.HoldDuration = 0
+                    crate.BinPrompt.MaxActivationDistance = getgenv().FiddleCratesDistance
+                    crate.BinPrompt.RequiresLineOfSight = false
+                else
+                    crate.BinPrompt.HoldDuration = 1
+                    crate.BinPrompt.MaxActivationDistance = 10
+                    crate.BinPrompt.RequiresLineOfSight = true
+                end
+            end
+        end
+    end
+})
+
+Tab_Main:Slider({
+    Title = "Crate Distance",
+    Desc = "Max 1000",
+    Value = {Min = 10, Max = 1000, Default = getgenv().FiddleCratesDistance},
+    Callback = function(value)
+        getgenv().FiddleCratesDistance = value
+        if getgenv().AutoFiddleCrates then
+            local Map = workspace:WaitForChild("Map")
+            for _, crate in pairs(Map:GetChildren()) do
+                if crate.Name == "Crate" and crate:FindFirstChild("BinPrompt") then
+                    crate.BinPrompt.MaxActivationDistance = value
+                end
+            end
+        end
+    end
+})
+
+
+getgenv().InstantID = false
+getgenv().IDMaxDistance = 10
+
+Tab_Main:Toggle({
+    Title = "Instant Search ID",
+    Desc = "",
+    Value = getgenv().InstantID,
+    Callback = function(state)
+        getgenv().InstantID = state
+        local Map = workspace:WaitForChild("Map")
+        for _, obj in pairs(Map:GetChildren()) do
+            if obj.Name == "Id" and obj:FindFirstChild("IdPrompt") then
+                if state then
+                    obj.IdPrompt.HoldDuration = 0
+                    obj.IdPrompt.MaxActivationDistance = getgenv().IDMaxDistance
+                    obj.IdPrompt.RequiresLineOfSight = false
+                else
+                    obj.IdPrompt.HoldDuration = 1
+                    obj.IdPrompt.MaxActivationDistance = 10
+                    obj.IdPrompt.RequiresLineOfSight = true
+                end
+            end
+        end
+    end
+})
+
+Tab_Main:Slider({
+    Title = "ID Distance",
+    Desc = "Max 1000",
+    Value = {Min = 10, Max = 1000, Default = getgenv().IDMaxDistance},
+    Callback = function(value)
+        getgenv().IDMaxDistance = value
+        if getgenv().InstantID then
+            local Map = workspace:WaitForChild("Map")
+            for _, obj in pairs(Map:GetChildren()) do
+                if obj.Name == "Id" and obj:FindFirstChild("IdPrompt") then
+                    obj.IdPrompt.MaxActivationDistance = value
+                end
+            end
+        end
+    end
+})
+
+
+
+
+
+
+
+
+
+
+
+
+getgenv().NoclipEnabled = false
+getgenv().OriginalCollides = {}
+
+Tab_Player:Toggle({
+    Title = "Noclip",
+    Value = getgenv().NoclipEnabled,
+    Callback = function(state)
+        getgenv().NoclipEnabled = state
+
+        local Players = game:GetService("Players")
+        local LocalPlayer = Players.LocalPlayer
+        local character = LocalPlayer.Character
+        if character then
+            if state then
+
+                getgenv().OriginalCollides = {}
+                for _, part in ipairs(character:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        getgenv().OriginalCollides[part] = part.CanCollide
+                        part.CanCollide = false
+                    end
+                end
+            else
+
+                for part, value in pairs(getgenv().OriginalCollides) do
+                    if part and part.Parent then
+                        part.CanCollide = value
+                    end
+                end
+                getgenv().OriginalCollides = {}
+            end
+        end
+    end
+})
+
+spawn(function()
+    local RunService = game:GetService("RunService")
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+
+    RunService.Stepped:Connect(function()
+        if getgenv().NoclipEnabled then
+            local character = LocalPlayer.Character
+            if character then
+                for _, part in ipairs(character:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end
+    end)
 end)
 
 
@@ -184,131 +389,17 @@ end)
 
 
 
+local EspSection = Tab_Visual:Section({ Title = "ESP / PLAYER" })
 
-
-
-
---[[
-
-
-
-
-    local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
-local LocalPlayer = Players.LocalPlayer
-
-Tabs.Main:AddButton({
-	Title = "Auto Get ID",
-	Callback = function()
-		local char = LocalPlayer.Character
-		if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-
-		local hrp = char.HumanoidRootPart
-		local originalCFrame = hrp.CFrame
-
-		for _, obj in ipairs(Workspace.Map:GetDescendants()) do
-			if obj:IsA("ProximityPrompt") and obj.Name == "IdPrompt" then
-				local parent = obj.Parent
-				local base = parent:FindFirstChildWhichIsA("BasePart") or parent
-				if base and base:IsA("BasePart") then
-					obj.HoldDuration = 0
-
-					-- Silent teleport just for the frame
-					hrp.CFrame = base.CFrame + Vector3.new(0, 3, 0)
-					task.wait() -- wait one frame for proximity prompt to register
-					
-					-- Fire the prompt
-					if fireproximityprompt then
-						fireproximityprompt(obj)
-					elseif firesignal and obj.Triggered then
-						firesignal(obj.Triggered)
-					end
-
-					-- Restore position immediately
-					hrp.CFrame = originalCFrame
-					task.wait(0.1)
-				end
-			end
-		end
-	end
-})
-
-
-
-
-
-
+getgenv().OrangeESP = false
+getgenv().OrangeESPObjects = {}
 local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
-local LocalPlayer = Players.LocalPlayer
-
-Tabs.Main:AddButton({
-    Title = "Instant ID",
-    Callback = function()
-        local char = LocalPlayer.Character
-        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-
-        for _, obj in ipairs(Workspace.Map:GetDescendants()) do
-            if obj:IsA("ProximityPrompt") and obj.Name == "IdPrompt" then
-                local base = obj.Parent:FindFirstChildWhichIsA("BasePart") or obj.Parent
-                if base and (char.HumanoidRootPart.Position - base.Position).Magnitude < 10 then
-                    obj.HoldDuration = 0.5
-                    task.wait(0.1)
-                    if fireproximityprompt then
-                        fireproximityprompt(obj)
-                    elseif firesignal and obj.Triggered then
-                        firesignal(obj.Triggered)
-                    end
-                    break
-                end
-            end
-        end
-    end
-})
-
-]]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-local Players = game:GetService("Players")
-
-local espEnabled = false
-local espColor = Color3.fromRGB(255, 255, 0)
-local highlights = {}
-
-local Toggle_OrangeESP = Tabs.Esp:AddToggle("OrangeESPToggle", {
-	Title = "Esp Highlight Player",
-	Default = false
-})
+local espColor = Color3.fromRGB(255, 165, 0)
+local charConnections = {}
 
 local function addESP(char, plr)
-	if not espEnabled or highlights[plr] or not char then return end
-	local hrp = char:FindFirstChild("HumanoidRootPart")
-	if not hrp then return end
+	if not getgenv().OrangeESP or getgenv().OrangeESPObjects[plr] or not char then return end
+	if not char:FindFirstChild("HumanoidRootPart") then return end
 
 	local hl = Instance.new("Highlight")
 	hl.Name = "ESP_Orange"
@@ -318,287 +409,67 @@ local function addESP(char, plr)
 	hl.Adornee = char
 	hl.Parent = char
 
-	highlights[plr] = hl
+	getgenv().OrangeESPObjects[plr] = hl
+end
+
+local function onCharacterAdded(plr, char)
+	task.wait(0.1)
+	if not getgenv().OrangeESP then return end
+	if getgenv().OrangeESPObjects[plr] then
+		getgenv().OrangeESPObjects[plr]:Destroy()
+		getgenv().OrangeESPObjects[plr] = nil
+	end
+	addESP(char, plr)
 end
 
 local function applyESP(plr)
 	if plr == Players.LocalPlayer then return end
 
-	local function onCharLoaded(char)
-		task.wait(0.3)
-		if highlights[plr] then
-			highlights[plr]:Destroy()
-			highlights[plr] = nil
-		end
-		addESP(char, plr)
+	if charConnections[plr] then
+		charConnections[plr]:Disconnect()
 	end
 
 	if plr.Character then
-		onCharLoaded(plr.Character)
+		onCharacterAdded(plr, plr.Character)
 	end
 
-	plr.CharacterAdded:Connect(onCharLoaded)
+	charConnections[plr] = plr.CharacterAdded:Connect(function(char)
+		onCharacterAdded(plr, char)
+	end)
 end
 
-Toggle_OrangeESP:OnChanged(function(state)
-	espEnabled = state
-
-	if espEnabled then
+local function toggleESP(state)
+	getgenv().OrangeESP = state
+	if state then
 		for _, p in ipairs(Players:GetPlayers()) do
 			applyESP(p)
 		end
 	else
-		for _, hl in pairs(highlights) do
+		for _, hl in pairs(getgenv().OrangeESPObjects) do
 			if hl then hl:Destroy() end
 		end
-		table.clear(highlights)
+		getgenv().OrangeESPObjects = {}
 	end
-end)
+end
 
-Players.PlayerAdded:Connect(function(p)
-	p.CharacterAdded:Connect(function(char)
-		task.wait(0.3)
-		if espEnabled then
-			if highlights[p] then
-				highlights[p]:Destroy()
-				highlights[p] = nil
-			end
-			addESP(char, p)
-		end
-	end)
-end)
-
-Players.PlayerRemoving:Connect(function(p)
-	if highlights[p] then
-		highlights[p]:Destroy()
-		highlights[p] = nil
-	end
-end)
-
-
-
-
-
-
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Gamemode = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Gamemode")
-local RunService = game:GetService("RunService")
-
-local espConnections = {}
-local espColorLoops = {}
-
-Tabs.Esp:AddToggle("DeathNoteESP", {
-	Title = "Esp Name Kira",
-	Default = false
-}):OnChanged(function(state)
-	if not state then
-		for _, conn in pairs(espConnections) do
-			conn:Disconnect()
-		end
-		espConnections = {}
-
-		for char, loop in pairs(espColorLoops) do
-			if loop then loop:Disconnect() end
-			if char and char:FindFirstChild("Head") then
-				local gui = char.Head:FindFirstChild("DeathNoteESP")
-				if gui then gui:Destroy() end
-			end
-		end
-		espColorLoops = {}
-		return
-	end
-
-	table.insert(espConnections, Gamemode.OnClientEvent:Connect(function(data)
-		if typeof(data) == "table" and data.Status == "DeathNoteBook" and typeof(data.Char) == "Instance" then
-			local char = data.Char
-			local head = char:FindFirstChild("Head")
-
-			if head and not head:FindFirstChild("DeathNoteESP") then
-				local billboard = Instance.new("BillboardGui")
-				billboard.Name = "DeathNoteESP"
-				billboard.Adornee = head
-				billboard.Size = UDim2.new(0, 100, 0, 30)
-				billboard.AlwaysOnTop = true
-				billboard.Parent = head
-
-				local label = Instance.new("TextLabel")
-				label.Size = UDim2.new(1, 0, 1, 0)
-				label.BackgroundTransparency = 1
-				label.TextScaled = true
-				label.Font = Enum.Font.SourceSansBold
-				label.Text = "[DEATH NOTE]"
-				label.TextColor3 = Color3.fromHSV(0, 1, 1)
-				label.Parent = billboard
-
-				local h = 0
-				espColorLoops[char] = RunService.RenderStepped:Connect(function()
-					h = (h + 0.01) % 1
-					label.TextColor3 = Color3.fromHSV(h, 1, 1)
-				end)
-			end
-		end
-	end))
-end)
-
-
-
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Gamemode = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Gamemode")
-local RunService = game:GetService("RunService")
-local Camera = workspace.CurrentCamera
-
-local lineConnections = {}
-local espLines = {}
-
-Tabs.Esp:AddToggle("DeathNoteLineESP", {
-	Title = "Esp Line Kira",
-	Default = false
-}):OnChanged(function(state)
-	for _, conn in pairs(lineConnections) do
-		conn:Disconnect()
-	end
-	lineConnections = {}
-
-	for _, line in pairs(espLines) do
-		if line.Line then line.Line:Destroy() end
-	end
-	espLines = {}
-
-	if not state then return end
-
-	local mainConnection = Gamemode.OnClientEvent:Connect(function(data)
-		if typeof(data) == "table" and data.Status == "DeathNoteBook" and typeof(data.Char) == "Instance" then
-			local char = data.Char
-			if espLines[char] then return end
-
-			local line = Drawing.new("Line")
-			line.Thickness = 2
-			line.Transparency = 1
-			line.Visible = true
-
-			local hue = 0
-			local renderConnection
-			renderConnection = RunService.RenderStepped:Connect(function()
-				if not char or not char:FindFirstChild("HumanoidRootPart") then
-					line.Visible = false
-					renderConnection:Disconnect()
-					espLines[char] = nil
-					line:Destroy()
-					return
-				end
-
-				hue = (hue + 0.005) % 1
-				line.Color = Color3.fromHSV(hue, 1, 1)
-
-				local rootPos = char.HumanoidRootPart.Position
-				local screenPos, onScreen = Camera:WorldToViewportPoint(rootPos)
-
-				if onScreen then
-					local center = Vector2.new(Camera.ViewportSize.X * 0.5, Camera.ViewportSize.Y * 0.5)
-					line.From = center
-					line.To = Vector2.new(screenPos.X, screenPos.Y)
-					line.Visible = true
-				else
-					line.Visible = false
-				end
-			end)
-
-			espLines[char] = {
-				Line = line,
-				Connection = renderConnection
-			}
-		end
-	end)
-
-	table.insert(lineConnections, mainConnection)
-end)
-
-
-
-
-
-local Workspace = game:GetService("Workspace")
-local RunService = game:GetService("RunService")
-
-local espEnabled = false
-local idConnection
-local espTags = {}
-
-local Toggle1 = Tabs.Esp:AddToggle("EspIdToggle", {
-	Title = "Esp Name ID",
-	Default = false
+Tab_Visual:Toggle({
+	Title = "ESP Highlights Player",
+	Value = getgenv().OrangeESP,
+	Callback = toggleESP
 })
 
-Toggle1:OnChanged(function(state)
-	espEnabled = state
+Players.PlayerAdded:Connect(function(plr)
+	applyESP(plr)
+end)
 
-	if espEnabled then
-		idConnection = RunService.Heartbeat:Connect(function()
-			for _, obj in ipairs(Workspace.Map:GetDescendants()) do
-				if obj:IsA("ProximityPrompt") and obj.Name == "IdPrompt" then
-					local parent = obj.Parent
-					if parent and (parent:IsA("Model") or parent:IsA("Part")) then
-						obj.HoldDuration = 0
-						obj.Enabled = true
-						if fireproximityprompt then
-							fireproximityprompt(obj)
-						elseif firesignal and obj.Triggered then
-							firesignal(obj.Triggered)
-						end
-						local base = parent:FindFirstChildWhichIsA("BasePart") or parent
-						if base:IsA("BasePart") and not espTags[base] then
-							local billboard = Instance.new("BillboardGui")
-							billboard.Name = "ESP"
-							billboard.Adornee = base
-							billboard.Size = UDim2.new(0, 100, 0, 30)
-							billboard.StudsOffset = Vector3.new(0, 3, 0)
-							billboard.AlwaysOnTop = true
-							billboard.Parent = base
-
-							local label = Instance.new("TextLabel")
-							label.Size = UDim2.new(1, 0, 1, 0)
-							label.BackgroundTransparency = 1
-							label.Text = "ID"
-							label.TextStrokeTransparency = 0
-							label.Font = Enum.Font.GothamBold
-							label.TextScaled = true
-							label.Parent = billboard
-
-							local renderConnection
-							renderConnection = RunService.RenderStepped:Connect(function()
-								if not base:IsDescendantOf(Workspace) then
-									if espTags[base] then
-										espTags[base].esp:Destroy()
-										espTags[base].connection:Disconnect()
-										espTags[base] = nil
-									end
-									renderConnection:Disconnect()
-								elseif label and label.Parent then
-									local t = tick()
-									label.TextColor3 = Color3.new(
-										0.5 + 0.5 * math.sin(t * 2),
-										0.5 + 0.5 * math.sin(t * 2 + 2),
-										0.5 + 0.5 * math.sin(t * 2 + 4)
-									)
-								end
-							end)
-
-							espTags[base] = {
-								esp = billboard,
-								connection = renderConnection
-							}
-						end
-					end
-				end
-			end
-		end)
-	else
-		if idConnection then idConnection:Disconnect() end
-		for _, data in pairs(espTags) do
-			if data.esp then data.esp:Destroy() end
-			if data.connection then data.connection:Disconnect() end
-		end
-		espTags = {}
+Players.PlayerRemoving:Connect(function(plr)
+	if charConnections[plr] then
+		charConnections[plr]:Disconnect()
+		charConnections[plr] = nil
+	end
+	if getgenv().OrangeESPObjects[plr] then
+		getgenv().OrangeESPObjects[plr]:Destroy()
+		getgenv().OrangeESPObjects[plr] = nil
 	end
 end)
 
@@ -611,6 +482,220 @@ end)
 
 
 
+local EspSection = Tab_Visual:Section({ Title = "ESP / KIRA" })
+
+getgenv().DeathNoteESPEnabled = false
+getgenv().espConnections = {}
+getgenv().espColorLoops = {}
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Gamemode = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Gamemode")
+local RunService = game:GetService("RunService")
+
+Tab_Visual:Toggle({
+    Title = "ESP Death Note",
+    Value = getgenv().DeathNoteESPEnabled,
+    Callback = function(state)
+        getgenv().DeathNoteESPEnabled = state
+
+        if not state then
+            for _, conn in pairs(getgenv().espConnections) do
+                conn:Disconnect()
+            end
+            getgenv().espConnections = {}
+
+            for char, loop in pairs(getgenv().espColorLoops) do
+                if loop then loop:Disconnect() end
+                if char and char:FindFirstChild("Head") then
+                    local gui = char.Head:FindFirstChild("DeathNoteESP")
+                    if gui then gui:Destroy() end
+                end
+            end
+            getgenv().espColorLoops = {}
+            return
+        end
+
+        table.insert(getgenv().espConnections, Gamemode.OnClientEvent:Connect(function(data)
+            if typeof(data) == "table" and data.Status == "DeathNoteBook" and typeof(data.Char) == "Instance" then
+                local char = data.Char
+                local head = char:FindFirstChild("Head")
+
+                if head and not head:FindFirstChild("DeathNoteESP") then
+                    local billboard = Instance.new("BillboardGui")
+                    billboard.Name = "DeathNoteESP"
+                    billboard.Adornee = head
+                    billboard.Size = UDim2.new(0, 100, 0, 30)
+                    billboard.AlwaysOnTop = true
+                    billboard.Parent = head
+
+                    local label = Instance.new("TextLabel")
+                    label.Size = UDim2.new(1, 0, 1, 0)
+                    label.BackgroundTransparency = 1
+                    label.TextScaled = false
+                    label.TextSize = 14
+                    label.Font = Enum.Font.SourceSansBold
+                    label.Text = "[DEATH NOTE]"
+                    label.TextColor3 = Color3.fromHSV(0, 1, 1)
+                    label.Parent = billboard
+
+                    local h = 0
+                    getgenv().espColorLoops[char] = RunService.RenderStepped:Connect(function()
+                        h = (h + 0.01) % 1
+                        label.TextColor3 = Color3.fromHSV(h, 1, 1)
+                    end)
+                end
+            end
+        end))
+    end
+})
+
+
+
+
+
+
+
+local EspSection = Tab_Visual:Section({ Title = "ESP / ID" })
+
+
+local Players = game:GetService("Players")
+local Map = workspace:WaitForChild("Map")
+local RunService = game:GetService("RunService")
+
+getgenv().IDESP = getgenv().IDESP or false
+getgenv().IDESPObjects = getgenv().IDESPObjects or {}
+getgenv().IDESPRainbowLoops = getgenv().IDESPRainbowLoops or {}
+
+local function CreateESP(obj, name)
+    if obj:FindFirstChild("ESP") then return end
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "ESP"
+    billboard.Size = UDim2.new(0, 100, 0, 50)
+    billboard.AlwaysOnTop = true
+    billboard.Adornee = obj
+    billboard.Parent = obj
+
+    local text = Instance.new("TextLabel")
+    text.Size = UDim2.new(1, 0, 1, 0)
+    text.BackgroundTransparency = 1
+    text.TextScaled = false
+    text.TextSize = 14
+    text.Text = name
+    text.Parent = billboard
+
+    local highlight = Instance.new("Highlight")
+    highlight.Adornee = obj
+    highlight.FillTransparency = 0.5
+    highlight.OutlineTransparency = 0
+    highlight.Parent = obj
+
+    table.insert(getgenv().IDESPObjects, billboard)
+    table.insert(getgenv().IDESPObjects, highlight)
+
+    local h = 0
+    getgenv().IDESPRainbowLoops[obj] = RunService.RenderStepped:Connect(function()
+        h = (h + 0.01) % 1
+        local color = Color3.fromHSV(h, 1, 1)
+        text.TextColor3 = color
+        highlight.FillColor = color
+        highlight.OutlineColor = color
+    end)
+end
+
+local function RemoveAllESP()
+    for _, obj in pairs(getgenv().IDESPObjects) do
+        if obj and obj.Parent then
+            obj:Destroy()
+        end
+    end
+    getgenv().IDESPObjects = {}
+
+    for _, loop in pairs(getgenv().IDESPRainbowLoops) do
+        if loop then loop:Disconnect() end
+    end
+    getgenv().IDESPRainbowLoops = {}
+end
+
+local function OnChildAdded(obj)
+    if getgenv().IDESP and obj.Name == "Id" and obj:FindFirstChild("SurfaceGui") then
+        local name = obj.SurfaceGui.Frame.PlayerName.Text
+        CreateESP(obj, name)
+    end
+end
+
+Map.ChildAdded:Connect(OnChildAdded)
+
+local function ApplyESPToExisting()
+    for _, obj in pairs(Map:GetChildren()) do
+        OnChildAdded(obj)
+    end
+end
+
+if getgenv().IDESP then
+    ApplyESPToExisting()
+end
+
+Tab_Visual:Toggle({
+    Title = "ESP IDs",
+    Value = getgenv().IDESP,
+    Callback = function(state)
+        getgenv().IDESP = state
+        if state then
+            ApplyESPToExisting()
+        else
+            RemoveAllESP()
+        end
+    end
+})
+
+
+
+
+
+local EspSection = Tab_Visual:Section({ Title = "NOTIFY" })
+
+
+getgenv().DeathNoteNotify = false
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Gamemode = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Gamemode")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local connection
+
+Tab_Visual:Toggle({
+    Title = "Death Note Notify",
+    Value = getgenv().DeathNoteNotify,
+    Callback = function(state)
+        getgenv().DeathNoteNotify = state
+
+        if state then
+            connection = Gamemode.OnClientEvent:Connect(function(data)
+                if type(data) == "table" and data.Status == "DeathNoteBook" and typeof(data.Char) == "Instance" then
+                    local char = data.Char
+                    local name = "Unknown"
+
+                    if char and char:FindFirstChild("Humanoid") then
+                        name = char.Humanoid.DisplayName or char.Name or "Unknown"
+                    elseif char.Name then
+                        name = char.Name
+                    end
+
+                    WindUI:Notify({
+                        Title = "Death Note",
+                        Content = name .. " picked up the Death Note.",
+                        Duration = 5
+                    })
+                end
+            end)
+        else
+            if connection then
+                connection:Disconnect()
+                connection = nil
+            end
+        end
+    end
+})
 
 
 
@@ -623,9 +708,139 @@ end)
 
 
 
-Tabs.Player:AddButton({
-    Title = "Instant Win Green/Red light",
-    Description = "",
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+local EspSection = Tab_Teleport:Section({ Title = "TELEPORT / ID" })
+
+
+
+
+Tab_Teleport:Button({
+    Title = "TP To My ID",
+    Callback = function()
+        local Players = game:GetService("Players")
+        local Client = Players.LocalPlayer
+        local Map = workspace:WaitForChild("Map")
+
+        local function FetchCurrentId()
+            for _, v in pairs(Map:GetChildren()) do
+                if v.Name == "Id" and v:FindFirstChild("SurfaceGui") then
+                    local gui = v.SurfaceGui
+                    if gui.Frame.PlayerName.Text == Client.Name or gui.Frame.PlayerName.Text == Client.DisplayName then
+                        return v
+                    end
+                end
+            end
+        end
+
+        local MyID = FetchCurrentId()
+        if MyID and Client.Character and Client.Character:FindFirstChild("HumanoidRootPart") then
+            Client.Character.HumanoidRootPart.CFrame = MyID.CFrame + Vector3.new(0, 2, 0)
+            if MyID:FindFirstChild("IdPrompt") then
+                fireproximityprompt(MyID.IdPrompt)
+            end
+            WindUI:Notify({
+                Title = "TP To My ID",
+                Content = "Teleported to your ID!",
+                Duration = 2
+            })
+        else
+            WindUI:Notify({
+                Title = "TP To My ID",
+                Content = "Your ID is either taken or not in the game.",
+                Duration = 2
+            })
+        end
+    end
+})
+
+
+
+local Players = game:GetService("Players")
+local Client = Players.LocalPlayer
+local Map = workspace:WaitForChild("Map")
+
+local playerNames = {}
+for _, plr in ipairs(Players:GetPlayers()) do
+    if plr ~= Client then
+        table.insert(playerNames, plr.Name)
+    end
+end
+
+local selectedPlayer = playerNames[1] or ""
+
+Tab_Teleport:Dropdown({
+    Title = "Select Player",
+    Values = playerNames,
+    Value = selectedPlayer,
+    Callback = function(value)
+        selectedPlayer = value
+    end
+})
+
+Tab_Teleport:Button({
+    Title = "Teleport to Player ID",
+    Callback = function()
+        local function FindPlayerByName(name)
+            for _, plr in pairs(Players:GetPlayers()) do
+                if plr.Name == name or plr.DisplayName == name then
+                    return plr
+                end
+            end
+        end
+
+        local function FindIdOfPlayer(plr)
+            for _, obj in pairs(Map:GetChildren()) do
+                if obj.Name == "Id" and obj:FindFirstChild("SurfaceGui") then
+                    local guiName = obj.SurfaceGui.Frame.PlayerName.Text
+                    if guiName == plr.Name or guiName == plr.DisplayName then
+                        return obj
+                    end
+                end
+            end
+            return nil
+        end
+
+        local targetPlayer = FindPlayerByName(selectedPlayer)
+        local idObj = FindIdOfPlayer(targetPlayer)
+        if idObj and Client.Character and Client.Character:FindFirstChild("HumanoidRootPart") then
+            Client.Character.HumanoidRootPart.CFrame = idObj.CFrame + Vector3.new(0, 1, 0)
+        end
+    end
+})
+
+
+
+
+
+local EspSection = Tab_Teleport:Section({ Title = "SQUID GAME" })
+
+
+Tab_Teleport:Button({
+    Title = "Tp End Green/Red Light",
     Callback = function()
         local player = game.Players.LocalPlayer
         local character = player.Character or player.CharacterAdded:Wait()
@@ -637,31 +852,10 @@ Tabs.Player:AddButton({
 
 
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local LocalPlayer = Players.LocalPlayer
-local noclipEnabled = false
-
-local Toggle_Noclip = Tabs.Player:AddToggle("ToggleNoclip", {
-    Title = "Noclip",
-    Default = false
-})
-
-Toggle_Noclip:OnChanged(function(state)
-    noclipEnabled = state
+Window:OnClose(function()
+    print("Window closed")
 end)
 
-RunService.Stepped:Connect(function()
-    if noclipEnabled and LocalPlayer.Character then
-        for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
-        end
-    end
+Window:OnDestroy(function()
+    print("Window destroyed")
 end)
-
-
-
-Window:SelectTab(1)
