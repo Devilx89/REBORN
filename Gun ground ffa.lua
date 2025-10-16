@@ -258,36 +258,53 @@ end)
 
 
 
-MainRight:AddToggle("PlayTeamESP", {
-	Text = "ESP Enemy",
+MainRight:AddToggle("ESPAllOutline", {
+	Text = "ESP Outline",
 	Default = false,
 	Callback = function(Value)
-		getgenv().ESPEnabled = Value
+		getgenv().ESPOutlineEnabled = Value
+		if not Value then
+			for p,h in pairs(highlights) do
+				if h and h.Parent then
+					h:Destroy()
+				end
+				highlights[p] = nil
+			end
+		else
+			for _,p in ipairs(Players:GetPlayers()) do
+				spawn(function() addHighlight(p) end)
+			end
+		end
 	end,
 })
 
-getgenv().ESPEnabled = false
-getgenv().ESPColor = Color3.fromRGB(0, 255, 0)
-getgenv().ESPFillTransparency = 1
-getgenv().ESPOutlineTransparency = 0
+getgenv().ESPOutlineEnabled = false
 
 local Players = game:GetService("Players")
-local Teams = game:GetService("Teams")
 local RunService = game:GetService("RunService")
-local targetTeam = Teams:FindFirstChild("Play")
+local LocalPlayer = Players.LocalPlayer
 
 local highlights = {}
+local outlineColor = Color3.fromRGB(255,0,0)
 
-local function makeHighlight(char)
-	if not char then return nil end
+local function addHighlight(player)
+	if not getgenv().ESPOutlineEnabled then return end
+	if not player or player == LocalPlayer then return end
+	if highlights[player] and highlights[player].Parent then return end
+	local char = player.Character
+	if not char then
+		player.CharacterAdded:Wait()
+		char = player.Character
+		if not char then return end
+	end
 	local h = Instance.new("Highlight")
 	h.Adornee = char
-	h.FillColor = getgenv().ESPColor
-	h.OutlineColor = getgenv().ESPColor
-	h.FillTransparency = getgenv().ESPFillTransparency
-	h.OutlineTransparency = getgenv().ESPOutlineTransparency
+	h.FillTransparency = 1
+	h.OutlineTransparency = 0
+	h.OutlineColor = outlineColor
+	h.FillColor = outlineColor
 	h.Parent = char
-	return h
+	highlights[player] = h
 end
 
 local function removeHighlight(player)
@@ -298,58 +315,37 @@ local function removeHighlight(player)
 	highlights[player] = nil
 end
 
-local function updatePlayer(player)
-	removeHighlight(player)
-	if not getgenv().ESPEnabled then return end
-	if not player or not player.Character then return end
-	local teamMatches = false
-	if targetTeam then
-		teamMatches = (player.Team == targetTeam)
-	else
-		teamMatches = (player.Team and player.Team.Name == "Play")
-	end
-	if teamMatches and player.Character.Parent then
-		highlights[player] = makeHighlight(player.Character)
-	end
-end
-
-for _, p in ipairs(Players:GetPlayers()) do
+for _,p in ipairs(Players:GetPlayers()) do
 	p.CharacterAdded:Connect(function()
 		task.wait(0.1)
-		updatePlayer(p)
+		if getgenv().ESPOutlineEnabled then addHighlight(p) end
 	end)
-	p.CharacterRemoving:Connect(function()
-		removeHighlight(p)
-	end)
-	updatePlayer(p)
+	p.CharacterRemoving:Connect(function() removeHighlight(p) end)
 end
 
 Players.PlayerAdded:Connect(function(p)
 	p.CharacterAdded:Connect(function()
 		task.wait(0.1)
-		updatePlayer(p)
+		if getgenv().ESPOutlineEnabled then addHighlight(p) end
 	end)
-	p.CharacterRemoving:Connect(function()
-		removeHighlight(p)
-	end)
-	updatePlayer(p)
+	p.CharacterRemoving:Connect(function() removeHighlight(p) end)
 end)
 
 RunService.Heartbeat:Connect(function()
-	for p, h in pairs(highlights) do
-		if not getgenv().ESPEnabled or not p.Character or not p.Character.Parent then
-			removeHighlight(p)
-		else
-			if h and h.Parent then
-				h.FillColor = getgenv().ESPColor
-				h.OutlineColor = getgenv().ESPColor
-				h.FillTransparency = getgenv().ESPFillTransparency
-				h.OutlineTransparency = getgenv().ESPOutlineTransparency
+	if not getgenv().ESPOutlineEnabled then return end
+	for _,p in ipairs(Players:GetPlayers()) do
+		if p ~= LocalPlayer then
+			if not highlights[p] and p.Character and p.Character.Parent then
+				addHighlight(p)
+			elseif highlights[p] and (not p.Character or not p.Character.Parent) then
+				removeHighlight(p)
+			elseif highlights[p] then
+				highlights[p].OutlineColor = outlineColor
+				highlights[p].FillColor = outlineColor
 			end
 		end
 	end
 end)
-
 
 
 
