@@ -166,7 +166,7 @@ getgenv().ShowAimbotCircle = true
 getgenv().WallCheck = true
 getgenv().AIM_FOV = 10
 getgenv().AIM_STRENGTH = 0.1
-getgenv().FovRadius = 200
+getgenv().FovRadius = 50
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
