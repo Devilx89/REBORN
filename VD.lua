@@ -620,55 +620,48 @@ KillerLeft:AddButton({
 
 
 
-local speeds = {18, 19, 20}
-local speedConnection
-
-local function applySpeed(hum)
-    if Toggles.SpeedEnabled.Value then
-        hum.WalkSpeed = speeds[Options.SpeedValue.Value]
-    else
-        hum.WalkSpeed = 10
-    end
-end
-
-local function setupSpeed(player)
-    local char = player.Character or player.CharacterAdded:Wait()
-    local hum = char:WaitForChild("Humanoid")
-    applySpeed(hum)
-    if speedConnection then
-        speedConnection:Disconnect()
-        speedConnection = nil
-    end
-    speedConnection = hum:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
-        applySpeed(hum)
-    end)
-end
-
 PlayerLeft:AddToggle("SpeedEnabled", {
-    Text = "Speed Boost",
-    Default = false,
-    Callback = function(Value)
-        setupSpeed(game.Players.LocalPlayer)
-    end,
+Text = "Speed Boost",
+Default = false,
+Callback = function(Value)
+espSettings.Windows.Enabled = Value
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hum = char:WaitForChild("Humanoid")
+
+if Value then  
+		local speeds = {18, 19, 20}  
+		hum.WalkSpeed = speeds[Options.SpeedValue.Value]  
+		hum:GetPropertyChangedSignal("WalkSpeed"):Connect(function()  
+			if Toggles.SpeedEnabled.Value then  
+				hum.WalkSpeed = speeds[Options.SpeedValue.Value]  
+			end  
+		end)  
+	else  
+		hum.WalkSpeed = 10  
+	end  
+end,
+
 })
 
 PlayerLeft:AddSlider("SpeedValue", {
-    Text = "Speed Level",
-    Default = 1,
-    Min = 1,
-    Max = 3,
-    Rounding = 0,
-    Callback = function(Value)
-        setupSpeed(game.Players.LocalPlayer)
-    end,
+Text = "Speed Level",
+Default = 1,
+Min = 1,
+Max = 3,
+Rounding = 0,
+Callback = function(Value)
+local speeds = {18, 19, 20}
+if Toggles.SpeedEnabled.Value then
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hum = char:WaitForChild("Humanoid")
+hum.WalkSpeed = speeds[Value]
+end
+end,
 })
 
-game.Players.LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(1)
-    if Toggles.SpeedEnabled and Toggles.SpeedEnabled.Value then
-        setupSpeed(game.Players.LocalPlayer)
-    end
-end)
+
 
 ESPRight:AddToggle("KillersESP", {
     Text = "Killers ESP",
