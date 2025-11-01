@@ -11,11 +11,11 @@ print("------------------------------------------------------------------")
 --================================================================--
 -- LOAD LIBRARY (Vgxmod UI)
 --================================================================--
-local repo = "https://raw.githubusercontent.com/Devilx89/Jwuwekkeledkdndnd/main/"
+local repo = "https://raw.githubusercontent.com/Devilx89/CUSTOM-1/refs/heads/main/"
 local success, err = pcall(function()
     Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
-    ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
-    SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
+    ThemeManager = loadstring(game:HttpGet(repo .. "Add-ons/ThemeManager.lua"))()
+    SaveManager = loadstring(game:HttpGet(repo .. "Add-ons/SaveManager.lua"))()
 end)
 
 if not success then
@@ -613,10 +613,71 @@ KillerLeft:AddButton({
 
 
 
+--================================================================--
+-- BLOCK SKILLCHECK GENERATOR+ HEALING
+--================================================================--
+
+local rs = game:GetService("ReplicatedStorage")
+local remotes = rs:WaitForChild("Remotes")
+local blocked = {}
+
+local function blockRemote(remote)
+    if not remote or blocked[remote] then return end
+    blocked[remote] = true
+    local mt = getrawmetatable(game)
+    local oldNamecall = mt.__namecall
+    setreadonly(mt, false)
+    mt.__namecall = function(self, ...)
+        if blocked[self] then
+            return nil
+        end
+        return oldNamecall(self, ...)
+    end
+    setreadonly(mt, true)
+end
+
+local function unblockRemote(remote)
+    blocked[remote] = nil
+end
 
 
 --=== Player (LEFT) ===
 
+PlayerLeft:AddToggle("BlockGeneratorRemotes", {
+    Text = "Anti Fail Generator",
+    Default = false,
+    Callback = function(Value)
+        local gen = remotes:FindFirstChild("Generator")
+        if not gen then return end
+        local fail = gen:FindFirstChild("SkillCheckFailEvent")
+        local result = gen:FindFirstChild("SkillCheckResultEvent")
+        if Value then
+            blockRemote(fail)
+            blockRemote(result)
+        else
+            unblockRemote(fail)
+            unblockRemote(result)
+        end
+    end,
+})
+
+PlayerLeft:AddToggle("BlockHealingRemotes", {
+    Text = "Anti Fail Healing",
+    Default = false,
+    Callback = function(Value)
+        local heal = remotes:FindFirstChild("Healing")
+        if not heal then return end
+        local fail = heal:FindFirstChild("SkillCheckFailEvent")
+        local result = heal:FindFirstChild("SkillCheckResultEvent")
+        if Value then
+            blockRemote(fail)
+            blockRemote(result)
+        else
+            unblockRemote(fail)
+            unblockRemote(result)
+        end
+    end,
+})
 
 
 
@@ -660,6 +721,9 @@ hum.WalkSpeed = speeds[Value]
 end
 end,
 })
+
+
+
 
 
 
